@@ -14,8 +14,9 @@ export default function TestApiPage() {
     
     try {
       const response = await competitionsService.getAll({ limit: 5 });
-      setStatus('success');
-      setMessage(`✅ Conexión exitosa! Se encontraron ${response.meta.total} competiciones`);
+      const total = response.data?.length || 0;
+setMessage(`✅ Conexión exitosa! Se encontraron ${total} competiciones`);
+setData(response.data);
       setData(response.data);
     } catch (error: any) {
       setStatus('error');
