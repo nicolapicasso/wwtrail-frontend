@@ -1,192 +1,210 @@
+// components/EventFilters.tsx - VERSIÓN CORREGIDA
+// ✅ FIX #1: Usar CountrySelect en lugar de select normal
+// ✅ FIX #2: Agregar soporte para featured filter
+
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, MapPin, Filter, X } from 'lucide-react';
-
-export interface EventFilters {
-  search: string;
-  country: string;
-  type: string;
-  status: string;
-  isHighlighted: boolean | null;
-}
+import { useState, useCallback } from 'react';
+import { Search, Filter, X } from 'lucide-react';
+import CountrySelect from './CountrySelect';
 
 interface EventFiltersProps {
-  filters: EventFilters;
-  onFiltersChange: (filters: EventFilters) => void;
-  loading?: boolean;
+  onSearch: (query: string) => void;
+  onFilterStatus: (status: string) => void;
+  onFilterCountry: (country: string) => void;
+  onFilterHighlighted?: (highlighted: boolean | null) => void;  // ✅ NUEVO
+  showCountryFilter?: boolean;
+  showOrganizerFilter?: boolean;
+  showHighlightedFilter?: boolean;  // ✅ NUEVO
+  isLoading?: boolean;
 }
 
-export function EventFiltersComponent({ filters, onFiltersChange, loading }: EventFiltersProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [searchInput, setSearchInput] = useState(filters.search);
+export default function EventFilters({
+  onSearch,
+  onFilterStatus,
+  onFilterCountry,
+  onFilterHighlighted,  // ✅ NUEVO
+  showCountryFilter = true,
+  showOrganizerFilter = false,
+  showHighlightedFilter = false,  // ✅ NUEVO
+  isLoading = false,
+}: EventFiltersProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedHighlighted, setSelectedHighlighted] = useState<string>('all');  // ✅ NUEVO
 
-  // Debounce: espera 800ms después de que el usuario deje de escribir
-  useEffect(() => {
+  // Handler para búsqueda con debounce
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+    
+    // Debounce de 500ms
     const timer = setTimeout(() => {
-      if (searchInput !== filters.search) {
-        onFiltersChange({ ...filters, search: searchInput });
-      }
-    }, 800); // 800ms de espera
+      onSearch(value);
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [onSearch]);
 
-  // Sincronizar si filters.search cambia externamente
-  useEffect(() => {
-    setSearchInput(filters.search);
-  }, [filters.search]);
+  // Handler para país
+  const handleCountryChange = useCallback((countryCode: string) => {
+    setSelectedCountry(countryCode);
+    onFilterCountry(countryCode);
+  }, [onFilterCountry]);
 
-  const handleCountryChange = (value: string) => {
-    onFiltersChange({ ...filters, country: value });
-  };
+  // Handler para estado
+  const handleStatusChange = useCallback((status: string) => {
+    setSelectedStatus(status);
+    onFilterStatus(status);
+  }, [onFilterStatus]);
 
-  const handleTypeChange = (value: string) => {
-    onFiltersChange({ ...filters, type: value });
-  };
+  // ✅ NUEVO: Handler para highlighted
+  const handleHighlightedChange = useCallback((value: string) => {
+    setSelectedHighlighted(value);
+    
+    if (onFilterHighlighted) {
+      if (value === 'all') {
+        onFilterHighlighted(null);
+      } else {
+        onFilterHighlighted(value === 'true');
+      }
+    }
+  }, [onFilterHighlighted]);
 
-  const handleStatusChange = (value: string) => {
-    onFiltersChange({ ...filters, status: value });
-  };
+  // Limpiar búsqueda
+  const clearSearch = useCallback(() => {
+    setSearchTerm('');
+    onSearch('');
+  }, [onSearch]);
 
-  const handleHighlightedChange = (value: string) => {
-    const highlighted = value === '' ? null : value === 'true';
-    onFiltersChange({ ...filters, isHighlighted: highlighted });
-  };
+  // Limpiar todos los filtros
+  const clearAllFilters = useCallback(() => {
+    setSearchTerm('');
+    setSelectedCountry('');
+    setSelectedStatus('ALL');
+    setSelectedHighlighted('all');
+    onSearch('');
+    onFilterCountry('');
+    onFilterStatus('ALL');
+    if (onFilterHighlighted) {
+      onFilterHighlighted(null);
+    }
+  }, [onSearch, onFilterCountry, onFilterStatus, onFilterHighlighted]);
 
-  const handleClearFilters = () => {
-    setSearchInput('');
-    onFiltersChange({
-      search: '',
-      country: '',
-      type: '',
-      status: '',
-      isHighlighted: null,
-    });
-  };
-
-  const hasActiveFilters =
-    filters.search ||
-    filters.country ||
-    filters.type ||
-    filters.status ||
-    filters.isHighlighted !== null;
+  const hasActiveFilters = searchTerm || selectedCountry || selectedStatus !== 'ALL' || selectedHighlighted !== 'all';
 
   return (
-    <div className="space-y-4">
-      {/* Search bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search events..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          disabled={loading}
-          className="w-full rounded-lg border border-input bg-background py-2 pl-10 pr-4 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-      </div>
+    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+      {/* Search Bar */}
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* Search Input */}
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search events by name or location..."
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            disabled={isLoading}
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          {searchTerm && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
 
-      {/* Toggle filters button */}
-      <div className="flex items-center justify-between">
+        {/* Filters Toggle Button (Mobile) */}
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          onClick={() => setShowFiltersPanel(!showFiltersPanel)}
+          className="md:hidden flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
         >
-          <Filter className="h-4 w-4" />
-          <span>{isExpanded ? 'Hide' : 'Show'} Filters</span>
-          {hasActiveFilters && !isExpanded && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-600 text-xs text-white">
-              •
+          <Filter className="h-5 w-5" />
+          Filters
+          {hasActiveFilters && (
+            <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {[searchTerm, selectedCountry, selectedStatus !== 'ALL', selectedHighlighted !== 'all'].filter(Boolean).length}
             </span>
           )}
         </button>
-
-        {hasActiveFilters && (
-          <button
-            onClick={handleClearFilters}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="h-4 w-4" />
-            <span>Clear all</span>
-          </button>
-        )}
       </div>
 
-      {/* Expanded filters */}
-      {isExpanded && (
-        <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Country */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Country</label>
-            <select
-              value={filters.country}
-              onChange={(e) => handleCountryChange(e.target.value)}
-              disabled={loading}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">All Countries</option>
-              <option value="ES">Spain</option>
-              <option value="FR">France</option>
-              <option value="IT">Italy</option>
-              <option value="DE">Germany</option>
-            </select>
-          </div>
+      {/* Filter Controls */}
+      <div className={`${showFiltersPanel ? 'block' : 'hidden'} md:block mt-4`}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          {/* ✅ FIX: Country Filter con CountrySelect */}
+          {showCountryFilter && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Country
+              </label>
+              <CountrySelect
+                value={selectedCountry}
+                onChange={handleCountryChange}
+                showAllOption={true}
+                disabled={isLoading}
+              />
+            </div>
+          )}
 
-          {/* Type */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Type</label>
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
             <select
-              value={filters.type}
-              onChange={(e) => handleTypeChange(e.target.value)}
-              disabled={loading}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">All Types</option>
-              <option value="TRAIL">Trail</option>
-              <option value="ULTRA">Ultra</option>
-              <option value="VERTICAL">Vertical</option>
-              <option value="SKYRUNNING">Skyrunning</option>
-            </select>
-          </div>
-
-          {/* Status */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Status</label>
-            <select
-              value={filters.status}
+              value={selectedStatus}
               onChange={(e) => handleStatusChange(e.target.value)}
-              disabled={loading}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              disabled={isLoading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">All Status</option>
-              <option value="PUBLISHED">Published</option>
+              <option value="ALL">All Status</option>
               <option value="DRAFT">Draft</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
 
-          {/* Featured */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Featured</label>
-            <select
-              value={
-                filters.isHighlighted === null
-                  ? ''
-                  : filters.isHighlighted
-                  ? 'true'
-                  : 'false'
-              }
-              onChange={(e) => handleHighlightedChange(e.target.value)}
-              disabled={loading}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">All Events</option>
-              <option value="true">Featured Only</option>
-              <option value="false">Regular Only</option>
-            </select>
-          </div>
+          {/* ✅ NUEVO: Highlighted Filter */}
+          {showHighlightedFilter && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Featured
+              </label>
+              <select
+                value={selectedHighlighted}
+                onChange={(e) => handleHighlightedChange(e.target.value)}
+                disabled={isLoading}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="all">All Events</option>
+                <option value="true">Featured Only</option>
+                <option value="false">Not Featured</option>
+              </select>
+            </div>
+          )}
+
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <div className="flex items-end">
+              <button
+                onClick={clearAllFilters}
+                disabled={isLoading}
+                className="w-full px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

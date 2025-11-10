@@ -1,304 +1,158 @@
-// hooks/useEditions.ts - Hook for managing editions
-
-import { useState, useEffect, useCallback } from 'react';
-import { editionsService } from '@/lib/api/v2';
-import {
-  Edition,
-  EditionFull,
-  EditionDetail,
-  EditionListResponse,
-  EditionFilters,
-} from '@/types/v2';
-
 /**
- * Hook para obtener ediciones de una competición
+ * 🔧 useEditions.ts - Hooks para gestión de ediciones
+ * ====================================================
  */
-export function useEditions(competitionId: string | null, filters?: EditionFilters) {
-  const [data, setData] = useState<EditionListResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchEditions = useCallback(async () => {
-    if (!competitionId) {
-      setLoading(false);
-      return;
-    }
+'use client';
 
-    try {
-      setLoading(true);
-      setError(null);
-const response = await editionsService.getByCompetition(competitionId, filters);
-setData({
-  data: response,
-  pagination: {
-    page: filters?.page || 1,
-    limit: filters?.limit || 20,
-    total: response.length,
-    pages: 1
-  }
-});
-    } catch (err: any) {
-      setError(err.message || 'Error loading editions');
-      console.error('Error fetching editions:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [competitionId, filters]);
+import { useState, useEffect } from 'react';
+import { apiClientV2 } from '@/lib/api/client';
 
-  useEffect(() => {
-    fetchEditions();
-  }, [fetchEditions]);
+// ============================================================================
+// 📦 TIPOS
+// ============================================================================
 
-  return {
-    editions: data?.data || [],
-    pagination: data?.pagination,
-    loading,
-    error,
-    refetch: fetchEditions,
-  };
+interface Edition {
+  id: string;
+  year: number;
+  date: string;
+  competitionId: string;
+  // ... otros campos
 }
 
-/**
- * Hook para obtener una edición por ID
- */
-export function useEdition(id: string | null) {
-  const [edition, setEdition] = useState<Edition | null>(null);
-  
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+// ============================================================================
+// 🪝 HOOK: Años disponibles de una competición
+// ============================================================================
 
-  const fetchEdition = useCallback(async () => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await editionsService.getById(id);
-      setEdition(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading edition');
-      console.error('Error fetching edition:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchEdition();
-  }, [fetchEdition]);
-
-  return {
-    edition,
-    loading,
-    error,
-    refetch: fetchEdition,
-  };
-}
-
-/**
- * Hook para obtener edición CON HERENCIA ⭐
- * Este es el hook principal para mostrar detalles de una edición
- */
-export function useEditionWithInheritance(id: string | null) {
-  const [edition, setEdition] = useState<Edition | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchEdition = useCallback(async () => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await editionsService.getWithInheritance(id);
-      setEdition(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading edition');
-      console.error('Error fetching edition with inheritance:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchEdition();
-  }, [fetchEdition]);
-
-  return {
-    edition,
-    loading,
-    error,
-    refetch: fetchEdition,
-  };
-}
-
-/**
- * Hook para obtener edición por slug
- */
-export function useEditionBySlug(slug: string | null) {
-  const [edition, setEdition] = useState<Edition | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchEdition = useCallback(async () => {
-    if (!slug) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await editionsService.getBySlug(slug);
-      setEdition(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading edition');
-      console.error('Error fetching edition by slug:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [slug]);
-
-  useEffect(() => {
-    fetchEdition();
-  }, [fetchEdition]);
-
-  return {
-    edition,
-    loading,
-    error,
-    refetch: fetchEdition,
-  };
-}
-
-/**
- * Hook para obtener edición de un año específico
- */
-export function useEditionByYear(competitionId: string | null, year: number | null) {
-  const [edition, setEdition] = useState<Edition | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchEdition = useCallback(async () => {
-    if (!competitionId || !year) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await editionsService.getByYear(competitionId, year);
-      setEdition(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading edition');
-      console.error('Error fetching edition by year:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [competitionId, year]);
-
-  useEffect(() => {
-    fetchEdition();
-  }, [fetchEdition]);
-
-  return {
-    edition,
-    loading,
-    error,
-    refetch: fetchEdition,
-  };
-}
-
-/**
- * Hook para obtener años disponibles de una competición ⭐
- * Útil para crear selectores de año
- */
-export function useAvailableYears(competitionId: string | null) {
+export function useAvailableYears(competitionId: string) {
   const [years, setYears] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchYears = useCallback(async () => {
+  useEffect(() => {
     if (!competitionId) {
+      setYears([]);
       setLoading(false);
       return;
     }
 
-    try {
+    const fetchYears = async () => {
       setLoading(true);
       setError(null);
-      const data = await editionsService.getAvailableYears(competitionId);
-      setYears(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading available years');
-      console.error('Error fetching available years:', err);
-    } finally {
-      setLoading(false);
-    }
+
+      try {
+        const { data } = await apiClientV2.get(`/competitions/${competitionId}/editions`);
+        
+        // Extraer años únicos y ordenar
+        const uniqueYears = [...new Set(data.data.map((edition: Edition) => edition.year))];
+        setYears(uniqueYears.sort((a, b) => b - a)); // Descendente (más reciente primero)
+      } catch (err) {
+        console.error('Error fetching available years:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch years');
+        setYears([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchYears();
   }, [competitionId]);
 
-  useEffect(() => {
-    fetchYears();
-  }, [fetchYears]);
-
-  return {
-    years,
-    loading,
-    error,
-    refetch: fetchYears,
-  };
+  return { years, loading: loading as boolean, error };
 }
 
-/**
- * Hook para obtener edición actual (año en curso)
- */
-export function useCurrentEdition(competitionId: string | null) {
-  const currentYear = new Date().getFullYear();
-  return useEditionByYear(competitionId, currentYear);
-}
+// ============================================================================
+// 🪝 HOOK: Obtener edición por año
+// ============================================================================
 
-/**
- * Hook para obtener última edición disponible
- */
-export function useLatestEdition(competitionId: string | null) {
+export function useEditionByYear(competitionId: string, year: number | null) {
   const [edition, setEdition] = useState<Edition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLatest = useCallback(async () => {
-    if (!competitionId) {
+  useEffect(() => {
+    if (!competitionId || !year) {
+      setEdition(null);
       setLoading(false);
       return;
     }
 
-    try {
+    const fetchEdition = async () => {
       setLoading(true);
       setError(null);
-      const data = await editionsService.getLatestEdition(competitionId);
-      setEdition(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading latest edition');
-      console.error('Error fetching latest edition:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [competitionId]);
+
+      try {
+        const { data } = await apiClientV2.get(`/competitions/${competitionId}/editions`);
+        
+        // Buscar la edición del año específico
+        const foundEdition = data.data.find((ed: Edition) => ed.year === year);
+        
+        setEdition(foundEdition || null);
+      } catch (err) {
+        console.error('Error fetching edition by year:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch edition');
+        setEdition(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEdition();
+  }, [competitionId, year]);
+
+  return { edition, loading: loading as boolean, error };
+}
+
+// ============================================================================
+// 🪝 HOOK: Todas las ediciones de una competición
+// ============================================================================
+
+export function useEditions(competitionId: string) {
+  const [editions, setEditions] = useState<Edition[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchLatest();
-  }, [fetchLatest]);
+    if (!competitionId) {
+      setEditions([]);
+      setLoading(false);
+      return;
+    }
 
-  return {
-    edition,
-    loading,
-    error,
-    refetch: fetchLatest,
-  };
+    const fetchEditions = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data } = await apiClientV2.get(`/competitions/${competitionId}/editions`);
+        setEditions(data.data || []);
+      } catch (err) {
+        console.error('Error fetching editions:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch editions');
+        setEditions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEditions();
+  }, [competitionId]);
+
+  return { editions, loading, error };
 }
+
+// ============================================================================
+// 📝 NOTAS DE USO
+// ============================================================================
+/*
+EJEMPLOS DE USO:
+
+1. Obtener años disponibles:
+   const { years, loading } = useAvailableYears(competitionId);
+
+2. Obtener edición de un año específico:
+   const { edition, loading } = useEditionByYear(competitionId, 2024);
+
+3. Obtener todas las ediciones:
+   const { editions, loading } = useEditions(competitionId);
+*/

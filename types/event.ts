@@ -54,6 +54,7 @@ export interface Event {
   imageUrl?: string;       // Imagen principal del evento (800x600 recomendado)
   logoUrl?: string;        // Logo del evento (400x400 recomendado)
   coverImage?: string;     // Imagen hero/banner (1920x600 recomendado)
+  coverImageUrl?: string;  // ✅ URL del cover (nuevo campo)
   thumbnailUrl?: string;   // Miniatura para listados (200x200 recomendado)
   
   websiteUrl?: string;
@@ -189,6 +190,7 @@ export interface CreateEventInput {
   logoUrl?: string;
   coverImage?: string;
   thumbnailUrl?: string;
+  coverImageUrl?: string;  // ✅ Nuevo campo
 
   websiteUrl?: string;
   facebookUrl?: string;
@@ -216,6 +218,7 @@ export interface UpdateEventInput {
   logoUrl?: string;
   coverImage?: string;
   thumbnailUrl?: string;
+  coverImageUrl?: string;  // ✅ Nuevo campo
 
   websiteUrl?: string;
   facebookUrl?: string;

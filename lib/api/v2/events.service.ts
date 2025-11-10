@@ -1,198 +1,149 @@
-// lib/api/v2/events.service.ts
-
-import { apiClientV2 } from '../client';
+import apiClientV2 from '../client-v2';
 import {
   Event,
-  EventDetail,
+  EventsResponse,
+  EventResponse,
+  EventStatsResponse,
+  CreateEventData,
+  UpdateEventData,
+  RejectEventData,
   EventFilters,
-  EventListResponse,
-  EventSearchResult,
-  EventNearby,
-  EventStats,
-} from '@/types/v2';
+} from '@/lib/types/event';
 
-/**
- * Events Service - USA V2
- * Usa apiClientV2 que tiene baseURL=/api/v2
- */
-export const eventsService = {
+class EventsService {
   /**
-   * Get all events with filters
+   * Get all events (public)
    */
-  async getAll(params?: EventFilters): Promise<EventListResponse> {
-    const response = await apiClientV2.get<EventListResponse>('/events', { params });
+  async getAll(filters?: EventFilters): Promise<EventsResponse> {
+    const params = new URLSearchParams();
+    
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.country) params.append('country', filters.country);
+    if (filters?.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString());
+
+    const response = await apiClientV2.get<EventsResponse>(`/events?${params.toString()}`);
     return response.data;
-  },
+  }
 
   /**
-   * Get event by ID (UUID)
+   * Get my events (authenticated user)
    */
-  async getById(id: string): Promise<EventDetail> {
-    const response = await apiClientV2.get<{ status: string; data: EventDetail }>(`/events/${id}`);
-    return response.data.data;
-  },
+  async getMyEvents(filters?: EventFilters): Promise<EventsResponse> {
+    const params = new URLSearchParams();
+    
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.country) params.append('country', filters.country);
 
-  /**
-   * Get event by slug (string)
-   */
-  async getBySlug(slug: string): Promise<EventDetail> {
-    const response = await apiClientV2.get<{ status: string; data: EventDetail }>(`/events/slug/${slug}`);
-    return response.data.data;
-  },
-
-  /**
-   * Search events (full-text)
-   */
-  async search(params: { q: string; limit?: number }): Promise<EventSearchResult[]> {
-    const response = await apiClientV2.get<{ status: string; data: EventSearchResult[]; count: number }>(
-      '/events/search',
-      { params }
-    );
-    return response.data.data;
-  },
-
-  /**
-   * Find nearby events (geospatial)
-   */
-  async findNearby(params: { lat: number; lon: number; radius?: number }): Promise<EventNearby[]> {
-    const response = await apiClientV2.get<{ status: string; data: EventNearby[]; count: number }>(
-      '/events/nearby',
-      { params }
-    );
-    return response.data.data;
-  },
-
-  /**
-   * Get featured events
-   */
-  async getFeatured(limit?: number): Promise<Event[]> {
-    const response = await apiClientV2.get<{ status: string; data: Event[]; count: number }>(
-      '/events/featured',
-      { params: { limit } }
-    );
-    return response.data.data;
-  },
-
-  /**
-   * Get upcoming events
-   */
-  async getUpcoming(limit?: number): Promise<Event[]> {
-    const response = await apiClientV2.get<{ status: string; data: Event[]; count: number }>(
-      '/events/upcoming',
-      { params: { limit } }
-    );
-    return response.data.data;
-  },
-
-  /**
-   * Get events by country
-   */
-  async getByCountry(
-    country: string,
-    options?: { page?: number; limit?: number }
-  ): Promise<EventListResponse> {
-    const response = await apiClientV2.get<EventListResponse>(`/events/country/${country}`, {
-      params: options,
-    });
+    const response = await apiClientV2.get<EventsResponse>(`/events/my-events?${params.toString()}`);
     return response.data;
-  },
+  }
+
+  /**
+   * Get pending events (admin only)
+   */
+  async getPendingEvents(filters?: EventFilters): Promise<EventsResponse> {
+    const params = new URLSearchParams();
+    
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.country) params.append('country', filters.country);
+    if (filters?.organizerId) params.append('organizerId', filters.organizerId);
+
+    const response = await apiClientV2.get<EventsResponse>(`/events/pending?${params.toString()}`);
+    return response.data;
+  }
 
   /**
    * Get event statistics
    */
-  async getStats(id: string): Promise<EventStats> {
-    const response = await apiClientV2.get<{ status: string; data: EventStats }>(`/events/${id}/stats`);
-    return response.data.data;
-  },
-
-  /**
-   * Create event (requires auth)
-   */
-  async create(data: Partial<Event>): Promise<Event> {
-    const response = await apiClientV2.post<{ status: string; data: Event }>('/events', data);
-    return response.data.data;
-  },
-
-  /**
-   * Update event (requires auth)
-   */
-  async update(id: string, data: Partial<Event>): Promise<Event> {
-    const response = await apiClientV2.put<{ status: string; data: Event }>(`/events/${id}`, data);
-    return response.data.data;
-  },
-
-  /**
-   * Delete event (requires auth)
-   */
-  async delete(id: string): Promise<void> {
-    await apiClientV2.delete(`/events/${id}`);
-  },
-
-  /**
-   * Get my events (requires auth: ORGANIZER or ADMIN)
-   */
-  async getMyEvents(filters?: Partial<EventFilters>): Promise<EventListResponse> {
-    const response = await apiClientV2.get<EventListResponse>('/events/my-events', {
-      params: filters,
-    });
+  async getStats(): Promise<EventStatsResponse> {
+    const response = await apiClientV2.get<EventStatsResponse>('/events/stats');
     return response.data;
-  },
+  }
 
   /**
-   * Get my stats (requires auth: ORGANIZER or ADMIN)
+   * Get event by ID
    */
-  async getMyStats(): Promise<{
-    totalEvents: number;
-    publishedEvents: number;
-    draftEvents: number;
-    rejectedEvents: number;
-    totalCompetitions: number;
-    totalEditions: number;
-    totalViews: number;
-  }> {
-    const response = await apiClientV2.get<{
-      status: string;
-      data: {
-        totalEvents: number;
-        publishedEvents: number;
-        draftEvents: number;
-        rejectedEvents: number;
-        totalCompetitions: number;
-        totalEditions: number;
-        totalViews: number;
-      };
-    }>('/events/my-stats');
-    return response.data.data;
-  },
-
-  /**
-   * Get pending events (requires auth: ADMIN only)
-   */
-  async getPendingEvents(filters?: { page?: number; limit?: number }): Promise<EventListResponse> {
-    const response = await apiClientV2.get<EventListResponse>('/events/pending', {
-      params: filters,
-    });
+  async getById(id: string): Promise<EventResponse> {
+    const response = await apiClientV2.get<EventResponse>(`/events/${id}`);
     return response.data;
-  },
+  }
 
   /**
-   * Approve event (requires auth: ADMIN only)
+   * Get event by slug
    */
-  async approveEvent(eventId: string): Promise<Event> {
-    const response = await apiClientV2.post<{ status: string; message: string; data: Event }>(
-      `/events/${eventId}/approve`
+  async getBySlug(slug: string): Promise<EventResponse> {
+    const response = await apiClientV2.get<EventResponse>(`/events/slug/${slug}`);
+    return response.data;
+  }
+
+  /**
+   * Check if slug is available
+   */
+  async checkSlug(slug: string, excludeId?: string): Promise<{ available: boolean }> {
+    const params = new URLSearchParams();
+    if (excludeId) params.append('excludeId', excludeId);
+    
+    const response = await apiClientV2.get<{ status: string; data: { available: boolean } }>(
+      `/events/check-slug/${slug}?${params.toString()}`
     );
     return response.data.data;
-  },
+  }
 
   /**
-   * Reject event (requires auth: ADMIN only)
+   * Create event
    */
-  async rejectEvent(eventId: string, reason?: string): Promise<Event> {
-    const response = await apiClientV2.post<{ status: string; message: string; data: Event }>(
-      `/events/${eventId}/reject`,
-      { reason }
-    );
-    return response.data.data;
-  },
-};
+  async create(data: CreateEventData): Promise<EventResponse> {
+    const response = await apiClientV2.post<EventResponse>('/events', data);
+    return response.data;
+  }
+
+  /**
+   * Update event
+   */
+  async update(id: string, data: UpdateEventData): Promise<EventResponse> {
+    const response = await apiClientV2.put<EventResponse>(`/events/${id}`, data);
+    return response.data;
+  }
+
+  /**
+   * Delete event
+   */
+  async delete(id: string): Promise<{ status: string; message: string }> {
+    const response = await apiClientV2.delete<{ status: string; message: string }>(`/events/${id}`);
+    return response.data;
+  }
+
+  /**
+   * Approve event (admin only)
+   */
+  async approve(id: string): Promise<EventResponse> {
+    const response = await apiClientV2.post<EventResponse>(`/events/${id}/approve`);
+    return response.data;
+  }
+
+  /**
+   * Reject event (admin only)
+   */
+  async reject(id: string, data?: RejectEventData): Promise<EventResponse> {
+    const response = await apiClientV2.post<EventResponse>(`/events/${id}/reject`, data || {});
+    return response.data;
+  }
+
+  /**
+   * Toggle featured status (admin only)
+   */
+  async toggleFeatured(id: string): Promise<EventResponse> {
+    const response = await apiClientV2.patch<EventResponse>(`/events/${id}/featured`);
+    return response.data;
+  }
+}
+
+export default new EventsService();

@@ -58,9 +58,8 @@ export default function EventCard({
   const [imageError, setImageError] = useState(false);
   const [logoError, setLogoError] = useState(false);
 
-  // ✅ FIX: Determinar imagen principal - Soportar campos nuevos y NO usar gallery
-  const mainImage = event.coverImage || event.coverImageUrl || null;
-  const logoImage = event.logo || event.logoUrl || null;
+  // Determinar imagen principal
+  const mainImage = event.coverImage || event.gallery?.[0] || event.bannerImage || null;
   const hasGallery = event.gallery && event.gallery.length > 0;
   const competitionCount = event._count?.competitions || 0;
 
@@ -146,11 +145,11 @@ export default function EventCard({
         )}
 
         {/* Logo Overlay */}
-        {logoImage && !logoError && (
+        {event.logoUrl && !logoError && (
           <div className="absolute bottom-3 left-3 bg-white rounded-lg p-2 shadow-lg z-10">
             <div className="relative w-12 h-12">
               <Image
-                src={logoImage}
+                src={event.logoUrl}
                 alt={`${event.name} logo`}
                 fill
                 className="object-contain"

@@ -1,8 +1,4 @@
-// components/EventList.tsx - VERSIÓN FINAL CORREGIDA
-// ✅ FIX #1: Featured events no muestra todos - solo featured=true
-// ✅ FIX #2: EventFilters usa CountrySelect
-// ✅ FIX #3: viewMode funcional
-// ✅ FIX #4: Desactivar paginación cuando featuredOnly=true
+// components/EventList.tsx - List events with filters and pagination
 
 'use client';
 
@@ -25,16 +21,13 @@ export interface EventFilters {
   country: string;
   type: string;
   status: string;
-  featured: boolean | null;
+  isHighlighted: boolean | null;
 }
 
 interface EventListProps {
   initialPage?: number;
   initialLimit?: number;
   showFilters?: boolean;
-  viewMode?: 'grid' | 'list';
-  featuredOnly?: boolean;
-  limit?: number;
 }
 
 // ============================================================================
@@ -44,73 +37,45 @@ interface EventListProps {
 export function EventList({ 
   initialPage = 1, 
   initialLimit = 12,
-  showFilters = true,
-  viewMode = 'grid',
-  featuredOnly = false,
-  limit: customLimit
+  showFilters = true 
 }: EventListProps) {
   const [page, setPage] = useState(initialPage);
-  const [limitState] = useState(customLimit || initialLimit);
+  const [limit] = useState(initialLimit);
   const [filters, setFilters] = useState<EventFilters>({
     search: '',
     country: '',
     type: '',
     status: '',
-    featured: featuredOnly ? true : null,  // ✅ FIX: Si featuredOnly, forzar true
+    isHighlighted: null,
   });
 
-  // ============================================================================
-  // ✅ FIX: Build query params - CRÍTICO para featured
-  // ============================================================================
+  // Build query params from filters - MEMOIZADO para evitar re-renders
   const queryParams = useMemo(() => {
-    const params: Record<string, string> = {};
-
-    // ✅ CRÍTICO: Si featuredOnly, SOLO paginación y highlighted
-    if (featuredOnly) {
-      params.page = '1';  // Siempre página 1 para featured
-      params.limit = limitState.toString();
-      params.featured = 'true';  // ✅ FORZAR featured
-      // NO agregar otros filtros
-      return params;
-    }
-
-    // Para lista normal, agregar todos los filtros
-    params.page = page.toString();
-    params.limit = limitState.toString();
+    const params: Record<string, string> = {
+      page: page.toString(),
+      limit: limit.toString(),
+    };
 
     if (filters.search) params.search = filters.search;
     if (filters.country) params.country = filters.country;
     if (filters.type) params.type = filters.type;
     if (filters.status) params.status = filters.status;
-    if (filters.featured !== null) {
-      params.featured = filters.featured.toString();
+    if (filters.isHighlighted !== null) {
+      params.isHighlighted = filters.isHighlighted.toString();
     }
 
     return params;
-  }, [page, limitState, filters, featuredOnly]);
+  }, [page, limit, filters]);
 
   const { events, pagination, loading, error } = useEvents(queryParams);
 
-  // 🔍 DEBUG TEMPORAL - BORRAR DESPUÉS
-useEffect(() => {
-  console.log('🔍 EventList Debug:', {
-    featuredOnly,
-    queryParams,
-    eventsReceived: events?.length,
-    firstEvent: events?.[0]?.name,
-    firstEventFeatured: events?.[0]?.featured
-  });
-}, [featuredOnly, queryParams, events]);
-
-  // Reset to page 1 when filters change (pero NO para featuredOnly)
+  // Reset to page 1 when filters change
   useEffect(() => {
-    if (!featuredOnly) {
-      setPage(1);
-    }
-  }, [filters, featuredOnly]);
+    setPage(1);
+  }, [filters]);
 
   // ============================================================================
-  // 🎛️ HANDLERS
+  // 🎛️ HANDLERS - Adaptados a la interfaz de EventFilters
   // ============================================================================
 
   const handleSearch = (query: string) => {
@@ -123,11 +88,6 @@ useEffect(() => {
 
   const handleFilterCountry = (country: string) => {
     setFilters(prev => ({ ...prev, country }));
-  };
-
-  // ✅ NUEVO: Handler para highlighted
-  const handleFilterHighlighted = (highlighted: boolean | null) => {
-    setFilters(prev => ({ ...prev, featured: highlighted }));
   };
 
   const handlePreviousPage = () => {
@@ -185,17 +145,15 @@ useEffect(() => {
   return (
     <div className="space-y-6">
       {/* ============================================================ */}
-      {/* 🔍 FILTROS - Con CountrySelect */}
+      {/* 🔍 FILTROS - Usando EventFilters con su interfaz real */}
       {/* ============================================================ */}
       {showFilters && (
         <EventFilters
           onSearch={handleSearch}
           onFilterStatus={handleFilterStatus}
           onFilterCountry={handleFilterCountry}
-          onFilterHighlighted={handleFilterHighlighted}  // ✅ NUEVO
           showCountryFilter={true}
           showOrganizerFilter={false}
-          showHighlightedFilter={!featuredOnly}  // ✅ Solo mostrar si NO es featured
           isLoading={loading}
         />
       )}
@@ -203,7 +161,7 @@ useEffect(() => {
       {/* ============================================================ */}
       {/* 📊 CONTADOR DE RESULTADOS */}
       {/* ============================================================ */}
-      {pagination && !loading && !featuredOnly && (
+      {pagination && !loading && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             Showing <span className="font-medium">{events?.length || 0}</span> of{' '}
@@ -227,18 +185,12 @@ useEffect(() => {
       )}
 
       {/* ============================================================ */}
-      {/* 🎴 GRID/LIST DE EVENTOS */}
+      {/* 🎴 GRID DE EVENTOS - Usando EventCard */}
       {/* ============================================================ */}
-      <div 
-        className={
-          viewMode === 'grid'
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-            : 'flex flex-col gap-4'
-        }
-      >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading && events.length === 0 ? (
           // Loading skeleton
-          Array.from({ length: limitState }).map((_, i) => (
+          Array.from({ length: limit }).map((_, i) => (
             <div key={i} className="animate-pulse">
               <div className="bg-gray-200 h-48 rounded-t-lg"></div>
               <div className="bg-white p-4 rounded-b-lg">
@@ -247,8 +199,8 @@ useEffect(() => {
               </div>
             </div>
           ))
-        ) : events && events.length > 0 ? (
-          events.map((event) => (
+) : events && events.length > 0 ? (
+  events.map((event) => (
             <EventCard 
               key={event.id} 
               event={event}
@@ -269,9 +221,9 @@ useEffect(() => {
       </div>
 
       {/* ============================================================ */}
-      {/* 🔄 PAGINACIÓN - NO mostrar si featuredOnly */}
+      {/* 📄 PAGINACIÓN */}
       {/* ============================================================ */}
-      {pagination && pagination.pages > 1 && !loading && !featuredOnly && (
+      {pagination && pagination.pages > 1 && !loading && (
         <div className="flex items-center justify-center gap-2">
           {/* Previous button */}
           <button
@@ -349,7 +301,7 @@ export function EventListSimple({
 
   if (type) params.type = type;
   if (country) params.country = country;
-  if (featured) params.featured = 'true';
+  if (featured) params.isHighlighted = 'true';
 
   const { events, loading, error } = useEvents(params);
 
@@ -373,8 +325,20 @@ export function EventListSimple({
             </div>
           </div>
         ))
-      ) : events && events.length > 0 ? (
-        events.map((event) => (
+) : events && events.length > 0 ? (
+  events.map((event) => (
+    <EventCard 
+      key={event.id} 
+      event={event}
+      showStats={true}
+      managementMode={false}
+    />
+  ))
+) : (
+  <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
+    <p className="text-gray-500 text-lg">No events found</p>
+  </div>
+)}
           <EventCard 
             key={event.id} 
             event={event}
@@ -382,46 +346,36 @@ export function EventListSimple({
             managementMode={false}
           />
         ))
-      ) : (
-        <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-500 text-lg">No events found</p>
-        </div>
       )}
     </div>
   );
 }
 
 // ============================================================================
-// 📝 NOTAS DE CAMBIOS CRÍTICOS
+// 📝 NOTAS DE CAMBIOS
 // ============================================================================
 /*
-✅ FIXES APLICADOS:
+CAMBIOS REALIZADOS:
 
-1. FEATURED EVENTS FIX:
-   - queryParams ahora FUERZA featured='true' cuando featuredOnly=true
-   - Ignora todos los demás filtros cuando featuredOnly=true
-   - Siempre página 1 para featured
-   - No muestra paginación para featured
+1. ✅ Imports corregidos:
+   - import EventCard from './EventCard' (default export)
+   - import EventFilters from './EventFilters' (default export)
 
-2. COUNTRY SELECT FIX:
-   - EventFilters usa CountrySelect component
-   - Mismo component que en creación de eventos
-   - Con buscador integrado
+2. ✅ Interfaz EventFilters adaptada:
+   - onSearch(query: string)
+   - onFilterStatus(status: string)
+   - onFilterCountry(country: string)
+   - showCountryFilter={true}
+   - showOrganizerFilter={false}
+   - isLoading={loading}
 
-3. VIEWMODE FIX:
-   - className dinámico basado en viewMode
-   - grid: 3 columnas responsive
-   - list: flex column con gap
+3. ✅ Props de EventCard adaptadas:
+   - event={event}
+   - showStats={true}
+   - managementMode={false}
 
-4. HIGHLIGHTED FILTER:
-   - Nuevo handler onFilterHighlighted
-   - Solo visible cuando NO es featuredOnly
-   - 3 opciones: All / Featured Only / Not Featured
-
-RESULTADO:
-- ✅ Featured section muestra SOLO eventos con featured=true
-- ✅ Country filter usa CountrySelect con buscador
-- ✅ Grid/List cambia correctamente
-- ✅ Paginación funciona en lista principal
-- ✅ Sin paginación en featured section
+4. ✅ Mantiene toda la lógica original:
+   - useMemo para queryParams
+   - Paginación con ellipsis
+   - EventListSimple
 */

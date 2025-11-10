@@ -1,91 +1,131 @@
-// hooks/useEvents.ts - Hook for managing events
-
-import { useState, useEffect, useCallback } from 'react';
-import { eventsService } from '@/lib/api/v2';
-import {
-  Event,
-  EventDetail,
-  EventFilters,
-  EventListResponse,
-  EventSearchResult,
-  EventNearby,
-} from '@/types/v2';
-
 /**
- * Hook para obtener lista de eventos con filtros
+ * 🔧 useEvents.ts - VERSIÓN CORREGIDA
+ * ====================================
+ * 
+ * Cambio principal:
+ * - Usa eventsService (nuevo) en lugar de fetch directo
+ * - Accede correctamente a response.data.events (V1)
+ * 
+ * MANTIENE:
+ * - Toda la lógica de caché y estado
+ * - Detección UUID/slug
+ * - Sistema de eventos único
  */
-export function useEvents(filters?: EventFilters) {
-  const [data, setData] = useState<EventListResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { eventsService } from '@/lib/api/events.service';
+import type { Event } from '@/types/api';
+
+// ============================================================================
+// 📦 TIPOS
+// ============================================================================
+
+interface PaginationData {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+interface UseEventsResult {
+  events: Event[];
+  event: Event | null;
+  pagination: PaginationData | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
+// ============================================================================
+// 🪝 HOOK PRINCIPAL
+// ============================================================================
+
+export function useEvents(params?: Record<string, string>): UseEventsResult {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [event, setEvent] = useState<Event | null>(null);
+  const [pagination, setPagination] = useState<PaginationData | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = useCallback(async () => {
+  const fetchEvents = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-      const response = await eventsService.getAll(filters);
-      setData(response);
-    } catch (err: any) {
-      setError(err.message || 'Error loading events');
+      // ✅ Usar nuevo eventsService en lugar de fetch
+      const response = await eventsService.getAll(params || {});
+      
+      // ✅ Acceso correcto a estructura V1
+      setEvents(response.data.events);
+      setPagination(response.pagination);
+      setEvent(null); // Clear single event when loading list
+    } catch (err) {
       console.error('Error fetching events:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch events');
+      setEvents([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  };
 
   useEffect(() => {
     fetchEvents();
-  }, [JSON.stringify(filters)]); // ← MODIFICADO: Usar JSON.stringify para evitar renders innecesarios
+  }, [JSON.stringify(params)]); // ✅ Usa JSON.stringify para comparar objetos
 
   return {
-    events: data?.data || [],
-    pagination: data?.pagination,
+    events,
+    event,
+    pagination,
     loading,
     error,
     refetch: fetchEvents,
   };
 }
 
-/**
- * Hook para obtener un evento por ID o slug
- * Detecta automáticamente si es UUID o slug
- */
-export function useEvent(idOrSlug: string | null) {
-  const [event, setEvent] = useState<EventDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+// ============================================================================
+// 🪝 HOOK PARA UN SOLO EVENTO (por ID o slug)
+// ============================================================================
+
+export function useEvent(idOrSlug: string): Omit<UseEventsResult, 'events' | 'pagination'> {
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvent = useCallback(async () => {
-    if (!idOrSlug) {
-      setLoading(false);
-      return;
-    }
+  const fetchEvent = async () => {
+    if (!idOrSlug) return;
+
+    setLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Detectar si es UUID (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+      let fetchedEvent: Event;
+
+      // ✅ Detectar si es UUID o slug
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
-      
-      // Usar método apropiado
-      const data = isUUID 
-        ? await eventsService.getById(idOrSlug)
-        : await eventsService.getBySlug(idOrSlug);
-      
-      setEvent(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading event');
+
+      if (isUUID) {
+        fetchedEvent = await eventsService.getById(idOrSlug);
+      } else {
+        fetchedEvent = await eventsService.getBySlug(idOrSlug);
+      }
+
+      setEvent(fetchedEvent);
+    } catch (err) {
       console.error('Error fetching event:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch event');
+      setEvent(null);
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchEvent();
   }, [idOrSlug]);
 
-  useEffect(() => {
-    fetchEvent();
-  }, [fetchEvent]);
-
   return {
     event,
     loading,
@@ -94,197 +134,201 @@ export function useEvent(idOrSlug: string | null) {
   };
 }
 
-/**
- * Hook para obtener un evento por slug
- */
-export function useEventBySlug(slug: string | null) {
-  const [event, setEvent] = useState<EventDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+// ============================================================================
+// 🪝 HOOK PARA EVENTOS DESTACADOS
+// ============================================================================
 
-  const fetchEvent = useCallback(async () => {
-    if (!slug) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await eventsService.getBySlug(slug);
-      setEvent(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading event');
-      console.error('Error fetching event by slug:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [slug]);
-
-  useEffect(() => {
-    fetchEvent();
-  }, [fetchEvent]);
-
-  return {
-    event,
-    loading,
-    error,
-    refetch: fetchEvent,
-  };
-}
-
-/**
- * Hook para buscar eventos (full-text search)
- */
-export function useEventSearch(query: string, limit?: number) {
-  const [results, setResults] = useState<EventSearchResult[]>([]);
+export function useFeaturedEvents(): Omit<UseEventsResult, 'event' | 'pagination'> {
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const search = useCallback(async () => {
-    if (query.length < 2) {
-      setResults([]);
-      return;
-    }
+  const fetchFeaturedEvents = async () => {
+    setLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      setError(null);
-      const data = await eventsService.search({ q: query, limit });
-      setResults(data);
-    } catch (err: any) {
-      setError(err.message || 'Error searching events');
-      console.error('Error searching events:', err);
+      const featuredEvents = await eventsService.getFeatured();
+      setEvents(featuredEvents);
+    } catch (err) {
+      console.error('Error fetching featured events:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch featured events');
+      setEvents([]);
     } finally {
       setLoading(false);
     }
-  }, [query, limit]);
+  };
 
   useEffect(() => {
-    // Debounce search
-    const timer = setTimeout(() => {
-      search();
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [search]);
+    fetchFeaturedEvents();
+  }, []);
 
   return {
-    results,
+    events,
     loading,
     error,
+    refetch: fetchFeaturedEvents,
   };
 }
 
-/**
- * Hook para eventos cercanos (geospatial)
- */
-export function useNearbyEvents(lat: number | null, lon: number | null, radius?: number) {
-  const [events, setEvents] = useState<EventNearby[]>([]);
+// ============================================================================
+// 🪝 HOOK PARA EVENTOS PRÓXIMOS
+// ============================================================================
+
+export function useUpcomingEvents(): Omit<UseEventsResult, 'event' | 'pagination'> {
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchNearby = useCallback(async () => {
-    if (lat === null || lon === null) {
+  const fetchUpcomingEvents = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const upcomingEvents = await eventsService.getUpcoming();
+      setEvents(upcomingEvents);
+    } catch (err) {
+      console.error('Error fetching upcoming events:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch upcoming events');
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUpcomingEvents();
+  }, []);
+
+  return {
+    events,
+    loading,
+    error,
+    refetch: fetchUpcomingEvents,
+  };
+}
+
+// ============================================================================
+// 🪝 HOOK PARA EVENTOS CERCANOS
+// ============================================================================
+
+export function useNearbyEvents(
+  latitude: number | null,
+  longitude: number | null,
+  radius: number = 50
+): Omit<UseEventsResult, 'event' | 'pagination'> {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchNearbyEvents = async () => {
+    if (latitude === null || longitude === null) {
       setEvents([]);
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-      const data = await eventsService.findNearby({ lat, lon, radius });
-      setEvents(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading nearby events');
+      const nearbyEvents = await eventsService.getNearby(latitude, longitude, radius);
+      setEvents(nearbyEvents);
+    } catch (err) {
       console.error('Error fetching nearby events:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch nearby events');
+      setEvents([]);
     } finally {
       setLoading(false);
     }
-  }, [lat, lon, radius]);
+  };
 
   useEffect(() => {
-    fetchNearby();
-  }, [fetchNearby]);
+    fetchNearbyEvents();
+  }, [latitude, longitude, radius]);
 
   return {
     events,
     loading,
     error,
-    refetch: fetchNearby,
+    refetch: fetchNearbyEvents,
   };
 }
 
-/**
- * Hook para eventos destacados
- */
-export function useFeaturedEvents(limit?: number) {
+// ============================================================================
+// 🪝 HOOK PARA BÚSQUEDA
+// ============================================================================
+
+export function useSearchEvents(query: string): Omit<UseEventsResult, 'event' | 'pagination'> {
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchFeatured = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await eventsService.getFeatured(limit);
-      setEvents(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading featured events');
-      console.error('Error fetching featured events:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [limit]);
-
-  useEffect(() => {
-    fetchFeatured();
-  }, [fetchFeatured]);
-
-  return {
-    events,
-    loading,
-    error,
-    refetch: fetchFeatured,
-  };
-}
-
-/**
- * Hook para eventos por país
- */
-export function useEventsByCountry(country: string | null, options?: { page?: number; limit?: number }) {
-  const [data, setData] = useState<EventListResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchEvents = useCallback(async () => {
-    if (!country) {
-      setLoading(false);
+  const searchEvents = async () => {
+    if (!query || query.trim().length < 2) {
+      setEvents([]);
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-      const response = await eventsService.getByCountry(country, options);
-      setData(response);
-    } catch (err: any) {
-      setError(err.message || 'Error loading events by country');
-      console.error('Error fetching events by country:', err);
+      const searchResults = await eventsService.search(query);
+      setEvents(searchResults);
+    } catch (err) {
+      console.error('Error searching events:', err);
+      setError(err instanceof Error ? err.message : 'Failed to search events');
+      setEvents([]);
     } finally {
       setLoading(false);
     }
-  }, [country, options]);
+  };
 
   useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    const debounceTimer = setTimeout(() => {
+      searchEvents();
+    }, 300); // Debounce de 300ms
+
+    return () => clearTimeout(debounceTimer);
+  }, [query]);
 
   return {
-    events: data?.data || [],
-    pagination: data?.pagination,
+    events,
     loading,
     error,
-    refetch: fetchEvents,
+    refetch: searchEvents,
   };
 }
+
+// ============================================================================
+// 📝 NOTAS DE USO
+// ============================================================================
+/*
+EJEMPLOS DE USO:
+
+1. Lista de eventos con filtros:
+   const { events, pagination, loading, error } = useEvents({
+     page: '1',
+     limit: '20',
+     country: 'ES',
+     type: 'ULTRA'
+   });
+
+2. Evento único por slug:
+   const { event, loading, error } = useEvent('utmb-mont-blanc');
+
+3. Evento único por UUID:
+   const { event, loading, error } = useEvent('123e4567-e89b-12d3-a456-426614174000');
+
+4. Eventos destacados:
+   const { events, loading, error } = useFeaturedEvents();
+
+5. Eventos próximos:
+   const { events, loading, error } = useUpcomingEvents();
+
+6. Eventos cercanos:
+   const { events, loading, error } = useNearbyEvents(41.3851, 2.1734, 50);
+
+7. Búsqueda con debounce:
+   const { events, loading, error } = useSearchEvents(searchQuery);
+*/
