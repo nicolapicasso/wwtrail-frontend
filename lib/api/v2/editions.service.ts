@@ -8,6 +8,54 @@ import { Edition, EditionFull, EditionStats } from '@/types/edition';
  * CORREGIDO: Obtiene editions desde competition.editions
  */
 
+// Backend response structure (flat fields)
+interface EditionWithInheritanceResponse extends Edition {
+  // Resolved fields
+  distance: number;
+  elevation: number;
+  maxParticipants: number;
+  city: string;
+
+  // Flat fields from backend
+  eventName: string;
+  eventSlug: string;
+  eventCountry: string;
+  eventId: string;
+  competitionName: string;
+  competitionSlug: string;
+  competitionType: string;
+  baseDistance?: number;
+  baseElevation?: number;
+  baseMaxParticipants?: number;
+}
+
+// Transform backend response to EditionFull format
+function transformToEditionFull(response: EditionWithInheritanceResponse): EditionFull {
+  return {
+    ...response,
+    resolvedDistance: response.distance,
+    resolvedElevation: response.elevation,
+    resolvedMaxParticipants: response.maxParticipants,
+    resolvedCity: response.city,
+    competition: {
+      id: response.competitionId,
+      slug: response.competitionSlug,
+      name: response.competitionName,
+      type: response.competitionType,
+      baseDistance: response.baseDistance,
+      baseElevation: response.baseElevation,
+      baseMaxParticipants: response.baseMaxParticipants,
+    },
+    event: {
+      id: response.eventId,
+      slug: response.eventSlug,
+      name: response.eventName,
+      country: response.eventCountry,
+      city: response.city,
+    },
+  };
+}
+
 export const editionsService = {
   /**
    * Get editions by competition ID
@@ -73,9 +121,9 @@ export const editionsService = {
   async getBySlugWithInheritance(slug: string): Promise<EditionFull> {
     const response = await apiClientV2.get<{
       status: string;
-      data: EditionFull;
+      data: EditionWithInheritanceResponse;
     }>(`/editions/slug/${slug}/with-inheritance`);
-    return response.data.data;
+    return transformToEditionFull(response.data.data);
   },
 
   /**
@@ -95,9 +143,9 @@ export const editionsService = {
   async getWithInheritance(id: string): Promise<EditionFull> {
     const response = await apiClientV2.get<{
       status: string;
-      data: EditionFull;
+      data: EditionWithInheritanceResponse;
     }>(`/editions/${id}/with-inheritance`);
-    return response.data.data;
+    return transformToEditionFull(response.data.data);
   },
 
   /**
