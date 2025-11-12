@@ -124,6 +124,13 @@ export default function EditionForm({
       console.error('Error response:', err.response?.data);
       console.error('Validation errors:', err.response?.data?.errors);
 
+      // Log detallado de cada error
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        err.response.data.errors.forEach((error: any, index: number) => {
+          console.error(`❌ Error ${index + 1}:`, JSON.stringify(error, null, 2));
+        });
+      }
+
       // Construir mensaje de error detallado
       let errorMessage = err.response?.data?.message || 'Error al guardar la edición';
 
