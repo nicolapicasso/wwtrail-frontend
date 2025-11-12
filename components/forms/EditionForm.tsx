@@ -75,10 +75,17 @@ export default function EditionForm({
     setLoading(true);
 
     try {
+      // Convert dates to ISO format with time
+      const toISODateTime = (dateString: string) => {
+        if (!dateString) return undefined;
+        const date = new Date(dateString);
+        return date.toISOString();
+      };
+
       const payload: any = {
         year,
-        startDate: formData.startDate,
-        endDate: formData.endDate || undefined,
+        startDate: toISODateTime(formData.startDate),
+        endDate: formData.endDate ? toISODateTime(formData.endDate) : undefined,
         distance: formData.distance ? parseFloat(formData.distance) : undefined,
         elevation: formData.elevation ? parseInt(formData.elevation) : undefined,
         maxParticipants: formData.maxParticipants
@@ -89,8 +96,12 @@ export default function EditionForm({
           : 0,
         city: formData.city || undefined,
         registrationUrl: formData.registrationUrl || undefined,
-        registrationOpenDate: formData.registrationOpenDate || undefined,
-        registrationCloseDate: formData.registrationCloseDate || undefined,
+        registrationOpenDate: formData.registrationOpenDate
+          ? toISODateTime(formData.registrationOpenDate)
+          : undefined,
+        registrationCloseDate: formData.registrationCloseDate
+          ? toISODateTime(formData.registrationCloseDate)
+          : undefined,
         resultsUrl: formData.resultsUrl || undefined,
         status: formData.status,
         registrationStatus: formData.registrationStatus,
