@@ -35,7 +35,7 @@ export default function EditionForm({
   // Form state
   const [formData, setFormData] = useState({
     year: edition?.year?.toString() || new Date().getFullYear().toString(),
-    specificDate: edition?.specificDate?.split('T')[0] || '',
+    startDate: (edition?.specificDate || edition?.startDate)?.split('T')[0] || '',
     endDate: edition?.endDate?.split('T')[0] || '',
     distance: edition?.distance?.toString() || '',
     elevation: edition?.elevation?.toString() || '',
@@ -67,14 +67,19 @@ export default function EditionForm({
       return;
     }
 
+    if (!formData.startDate) {
+      setError('La fecha de inicio es obligatoria');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const payload = {
+      const payload: any = {
         year,
-        specificDate: formData.specificDate || undefined,
+        startDate: formData.startDate,
         endDate: formData.endDate || undefined,
-        distance: formData.distance ? parseInt(formData.distance) : undefined,
+        distance: formData.distance ? parseFloat(formData.distance) : undefined,
         elevation: formData.elevation ? parseInt(formData.elevation) : undefined,
         maxParticipants: formData.maxParticipants
           ? parseInt(formData.maxParticipants)
@@ -87,10 +92,14 @@ export default function EditionForm({
         registrationOpenDate: formData.registrationOpenDate || undefined,
         registrationCloseDate: formData.registrationCloseDate || undefined,
         resultsUrl: formData.resultsUrl || undefined,
-        chronicle: formData.chronicle || undefined,
         status: formData.status,
         registrationStatus: formData.registrationStatus,
       };
+
+      // Chronicle solo para actualización
+      if (isEditMode && formData.chronicle) {
+        payload.chronicle = formData.chronicle;
+      }
 
       let result: Edition;
 
@@ -187,19 +196,20 @@ export default function EditionForm({
 
         {/* Dates */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Specific Date */}
+          {/* Start Date */}
           <div>
             <label
-              htmlFor="specificDate"
+              htmlFor="startDate"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Fecha de Inicio
+              Fecha de Inicio *
             </label>
             <input
               type="date"
-              id="specificDate"
-              value={formData.specificDate}
-              onChange={(e) => setFormData({ ...formData, specificDate: e.target.value })}
+              id="startDate"
+              value={formData.startDate}
+              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
