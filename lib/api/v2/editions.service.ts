@@ -67,6 +67,18 @@ export const editionsService = {
   },
 
   /**
+   * Get edition by slug with inheritance (resolved fields)
+   * GET /editions/slug/:slug/with-inheritance
+   */
+  async getBySlugWithInheritance(slug: string): Promise<Edition> {
+    const response = await apiClientV2.get<{
+      status: string;
+      data: Edition;
+    }>(`/editions/slug/${slug}/with-inheritance`);
+    return response.data.data;
+  },
+
+  /**
    * Get edition by year
    * Usa getByCompetition y filtra por año
    */

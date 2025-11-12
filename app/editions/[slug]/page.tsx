@@ -14,12 +14,11 @@ import { es } from 'date-fns/locale';
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   try {
-    const edition = await editionsService.getBySlug(params.slug);
-    const editionWithDetails = await editionsService.getWithInheritance(edition.id);
+    const editionWithDetails = await editionsService.getBySlugWithInheritance(params.slug);
 
     return {
-      title: `${editionWithDetails.competition.name} ${edition.year} | WWTRAIL`,
-      description: edition.chronicle || `Edition ${edition.year} of ${editionWithDetails.competition.name}`,
+      title: `${editionWithDetails.competition.name} ${editionWithDetails.year} | WWTRAIL`,
+      description: editionWithDetails.chronicle || `Edition ${editionWithDetails.year} of ${editionWithDetails.competition.name}`,
     };
   } catch (error) {
     return {
@@ -37,18 +36,17 @@ export default async function EditionDetailPage({
 }: {
   params: { slug: string }
 }) {
-  let edition;
   let editionWithDetails;
 
   try {
-    edition = await editionsService.getBySlug(params.slug);
-    editionWithDetails = await editionsService.getWithInheritance(edition.id);
+    editionWithDetails = await editionsService.getBySlugWithInheritance(params.slug);
   } catch (error) {
     console.error('Error loading edition:', error);
     notFound();
   }
 
   const { competition, event } = editionWithDetails;
+  const edition = editionWithDetails; // For backwards compatibility with existing code
 
   // Helper to format dates
   const formatDate = (dateString: string | undefined) => {
