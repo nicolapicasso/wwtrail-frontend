@@ -101,6 +101,9 @@ export default function EditionForm({
         payload.chronicle = formData.chronicle;
       }
 
+      console.log('📤 Sending payload:', payload);
+      console.log('📍 Competition ID:', competitionId);
+
       let result: Edition;
 
       if (isEditMode) {
@@ -118,8 +121,12 @@ export default function EditionForm({
       }
     } catch (err: any) {
       console.error('Error saving edition:', err);
+      console.error('Error response:', err.response?.data);
       const errorMessage =
-        err.response?.data?.message || 'Error al guardar la edición';
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        JSON.stringify(err.response?.data) ||
+        'Error al guardar la edición';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
