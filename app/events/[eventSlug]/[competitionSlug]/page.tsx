@@ -6,10 +6,11 @@
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useCompetition } from '@/hooks/useCompetitions';
+import { useEditions } from '@/hooks/useEditions';
 import { EditionSelector } from '@/components/EditionSelector';
 import { EditionCard } from '@/components/EditionCard';
 import { Edition } from '@/types/v2';
-import { Mountain, TrendingUp, Users, ArrowLeft } from 'lucide-react';
+import { Mountain, TrendingUp, Users, ArrowLeft, Calendar, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CompetitionDetailPage() {
@@ -18,6 +19,7 @@ export default function CompetitionDetailPage() {
   const eventSlug = params?.eventSlug as string;
 
   const { competition, loading, error } = useCompetition(competitionSlug);
+  const { editions, loading: editionsLoading } = useEditions(competition?.id || '');
   const [selectedEdition, setSelectedEdition] = useState<Edition | null>(null);
 
   if (loading) {
@@ -107,16 +109,93 @@ export default function CompetitionDetailPage() {
 
             {/* All Editions List */}
             <div className="rounded-lg border bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-xl font-bold">All Editions</h2>
-              <p className="text-sm text-muted-foreground mb-4">
+              <h2 className="mb-4 text-xl font-bold flex items-center gap-2">
+                <Calendar className="h-6 w-6 text-blue-600" />
+                All Editions ({editions.length})
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">
                 Browse all available editions of this competition
               </p>
-              {/* Here you would list all editions - needs another hook */}
-              <div className="rounded-lg border border-dashed p-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Use the selector above to view edition details
-                </p>
-              </div>
+
+              {editionsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              ) : editions.length > 0 ? (
+                <div className="space-y-3">
+                  {editions.map((edition) => (
+                    <Link
+                      key={edition.id}
+                      href={`/editions/${edition.slug}`}
+                      className="block p-4 border rounded-lg hover:border-blue-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl font-bold text-blue-600">
+                              {edition.year}
+                            </span>
+                            {edition.specificDate && (
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <Calendar className="h-4 w-4" />
+                                {new Date(edition.specificDate).toLocaleDateString('es-ES', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {edition.city && (
+                            <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+                              <MapPin className="h-3 w-3" />
+                              {edition.city}
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
+                            {edition.distance && (
+                              <span>{edition.distance} km</span>
+                            )}
+                            {edition.elevation && (
+                              <span>{edition.elevation} m D+</span>
+                            )}
+                            {edition.currentParticipants !== undefined && (
+                              <span>{edition.currentParticipants} participantes</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {edition.status && (
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              edition.status === 'FINISHED' ? 'bg-gray-100 text-gray-700' :
+                              edition.status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
+                              edition.status === 'ONGOING' ? 'bg-green-100 text-green-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {edition.status === 'FINISHED' ? 'Finalizada' :
+                               edition.status === 'UPCOMING' ? 'Próxima' :
+                               edition.status === 'ONGOING' ? 'En curso' :
+                               edition.status}
+                            </span>
+                          )}
+                          <span className="text-blue-600 font-semibold">→</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
+                  <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-600">
+                    No hay ediciones disponibles aún
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
