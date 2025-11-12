@@ -1,6 +1,10 @@
 // types/edition.ts - Edition types for API v2
 
 import { EditionStatus, RegistrationStatus, Language } from './competition';
+import { EditionRating, RatingSummary } from './rating';
+import { EditionPodium } from './podium';
+import { EditionPhoto } from './photo';
+import { EditionWeather } from './weather';
 
 /**
  * Edition - Annual edition of a competition
@@ -11,25 +15,46 @@ export interface Edition {
   competitionId: string;
   slug: string;
   year: number;
-  startDate: string;
-  endDate?: string;
-  
+
+  // NUEVOS CAMPOS: Fechas específicas
+  specificDate?: string; // Fecha específica de inicio (si se conoce)
+  endDate?: string; // Fecha de finalización
+
+  // Backwards compatibility
+  startDate?: string; // Deprecated: usar specificDate
+
   // Fields that can be inherited from Competition
   distance?: number; // If NULL, inherits from competition.baseDistance
   elevation?: number; // If NULL, inherits from competition.baseElevation
   maxParticipants?: number; // If NULL, inherits from competition.baseMaxParticipants
   currentParticipants: number;
   city?: string; // If NULL, inherits from event.city
-  
+
   // Edition-specific fields
   registrationUrl?: string;
   registrationOpenDate?: string;
   registrationCloseDate?: string;
   resultsUrl?: string;
-  
+
+  // NUEVO: Crónica
+  chronicle?: string;
+
+  // NUEVO: Datos meteorológicos
+  weather?: EditionWeather;
+  weatherFetched?: boolean;
+
+  // NUEVO: Ratings
+  avgRating?: number;
+  totalRatings?: number;
+
   status: EditionStatus;
   registrationStatus: RegistrationStatus;
-  
+
+  // NUEVAS RELACIONES (opcionales en listados)
+  ratings?: EditionRating[];
+  podiums?: EditionPodium[];
+  photos?: EditionPhoto[];
+
   createdAt: string;
   updatedAt: string;
 }
