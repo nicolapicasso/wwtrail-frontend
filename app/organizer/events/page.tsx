@@ -295,7 +295,7 @@ export default function MyEventsPage() {
    * Handle add competition
    */
   const handleAddCompetition = (eventId: string) => {
-    router.push(`/organizer/events/${eventId}/competitions/new`);
+    router.push(`/organizer/competitions/new?eventId=${eventId}`);
   };
 
   /**
