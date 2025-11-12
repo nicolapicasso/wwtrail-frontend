@@ -1,7 +1,7 @@
 // lib/api/v2/editions.service.ts - VERSIÓN CORREGIDA
 
 import { apiClientV2 } from '../client';
-import { Edition, EditionStats } from '@/types/edition';
+import { Edition, EditionFull, EditionStats } from '@/types/edition';
 
 /**
  * Editions Service - USA V2
@@ -70,10 +70,10 @@ export const editionsService = {
    * Get edition by slug with inheritance (resolved fields)
    * GET /editions/slug/:slug/with-inheritance
    */
-  async getBySlugWithInheritance(slug: string): Promise<Edition> {
+  async getBySlugWithInheritance(slug: string): Promise<EditionFull> {
     const response = await apiClientV2.get<{
       status: string;
-      data: Edition;
+      data: EditionFull;
     }>(`/editions/slug/${slug}/with-inheritance`);
     return response.data.data;
   },
@@ -92,10 +92,10 @@ export const editionsService = {
    * Get edition with inheritance (resolved fields)
    * GET /editions/:id/with-inheritance
    */
-  async getWithInheritance(id: string): Promise<Edition> {
+  async getWithInheritance(id: string): Promise<EditionFull> {
     const response = await apiClientV2.get<{
       status: string;
-      data: Edition;
+      data: EditionFull;
     }>(`/editions/${id}/with-inheritance`);
     return response.data.data;
   },
