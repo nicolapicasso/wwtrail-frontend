@@ -37,6 +37,7 @@ export interface EventFilters {
   page?: number;
   limit?: number;
   featured?: boolean | string;  // ✅ AGREGADO
+  typicalMonth?: string;  // ✅ NUEVO: Filtro por mes típico del evento
 }
 
 interface ApiResponse<T> {
@@ -55,16 +56,21 @@ export const eventsService = {
    */
   async getAll(filters: EventFilters = {}): Promise<EventsResponseV1> {
     const params = new URLSearchParams();
-    
+
     if (filters.country) params.append('country', filters.country);
     if (filters.type) params.append('type', filters.type);
     if (filters.search) params.append('search', filters.search);
     if (filters.page) params.append('page', filters.page.toString());
     if (filters.limit) params.append('limit', filters.limit.toString());
-    
+
     // ✅ FIX CRÍTICO: Agregar featured
     if (filters.featured !== undefined && filters.featured !== null) {
       params.append('featured', filters.featured.toString());
+    }
+
+    // ✅ NUEVO: Agregar typicalMonth
+    if (filters.typicalMonth) {
+      params.append('typicalMonth', filters.typicalMonth);
     }
 
     const { data } = await apiClientV1.get('/events', { params });

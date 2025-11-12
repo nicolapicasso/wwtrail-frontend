@@ -54,9 +54,18 @@ export function useEvents(params?: Record<string, string>): UseEventsResult {
     setError(null);
 
     try {
+      // ✅ Convertir params (Record<string, string>) a EventFilters tipado
+      const filters: Record<string, any> = {};
+
+      if (params) {
+        Object.keys(params).forEach(key => {
+          filters[key] = params[key];
+        });
+      }
+
       // ✅ Usar nuevo eventsService en lugar de fetch
-      const response = await eventsService.getAll(params || {});
-      
+      const response = await eventsService.getAll(filters);
+
       // ✅ Acceso correcto a estructura V1
       setEvents(response.data.events);
       setPagination(response.pagination);
