@@ -122,11 +122,18 @@ export default function EditionForm({
     } catch (err: any) {
       console.error('Error saving edition:', err);
       console.error('Error response:', err.response?.data);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        JSON.stringify(err.response?.data) ||
-        'Error al guardar la edición';
+      console.error('Validation errors:', err.response?.data?.errors);
+
+      // Construir mensaje de error detallado
+      let errorMessage = err.response?.data?.message || 'Error al guardar la edición';
+
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        const validationErrors = err.response.data.errors
+          .map((e: any) => `${e.field}: ${e.message}`)
+          .join(', ');
+        errorMessage = `${errorMessage}: ${validationErrors}`;
+      }
+
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
