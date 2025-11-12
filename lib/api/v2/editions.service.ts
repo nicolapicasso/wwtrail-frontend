@@ -11,7 +11,7 @@ import { Edition, EditionStats } from '@/types/edition';
 export const editionsService = {
   /**
    * Get editions by competition ID
-   * CORREGIDO: Ahora obtiene la competición y extrae sus ediciones
+   * GET /competitions/:competitionId/editions
    */
   async getByCompetition(
     competitionId: string,
@@ -21,23 +21,20 @@ export const editionsService = {
     }
   ): Promise<Edition[]> {
     try {
-      // Obtener la competición con sus ediciones
+      // Usar el endpoint dedicado para obtener ediciones
       const response = await apiClientV2.get<{
         status: string;
-        data: {
-          id: string;
-          editions?: Edition[];
-        };
-      }>(`/competitions/${competitionId}`);
-      
-      let editions = response.data.data.editions || [];
-      
+        data: Edition[];
+      }>(`/competitions/${competitionId}/editions`);
+
+      let editions = response.data.data || [];
+
       // Ordenar por año
       const sortOrder = options?.sortOrder || 'desc';
-      editions = editions.sort((a, b) => 
+      editions = editions.sort((a, b) =>
         sortOrder === 'desc' ? b.year - a.year : a.year - b.year
       );
-      
+
       return editions;
     } catch (error) {
       console.error('Error getting editions:', error);
