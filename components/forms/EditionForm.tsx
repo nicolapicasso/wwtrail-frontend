@@ -51,6 +51,25 @@ export default function EditionForm({
     registrationStatus: edition?.registrationStatus || RegistrationStatus.NOT_OPEN,
   });
 
+  // Helper to adjust date to use the edition's year
+  const adjustDateToYear = (dateString: string, targetYear: number): string => {
+    if (!dateString) return '';
+    const [_, month, day] = dateString.split('-');
+    return `${targetYear}-${month}-${day}`;
+  };
+
+  // Handler for date changes - automatically adjust to edition year
+  const handleDateChange = (field: string, value: string) => {
+    if (!value || !formData.year) {
+      setFormData({ ...formData, [field]: value });
+      return;
+    }
+
+    const year = parseInt(formData.year);
+    const adjustedDate = adjustDateToYear(value, year);
+    setFormData({ ...formData, [field]: adjustedDate });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -75,17 +94,20 @@ export default function EditionForm({
     setLoading(true);
 
     try {
-      // Convert dates to ISO format with time
-      const toISODateTime = (dateString: string) => {
+      // Convert dates to ISO format with time, ensuring they use the edition year
+      const toISODateTime = (dateString: string, editionYear: number) => {
         if (!dateString) return undefined;
-        const date = new Date(dateString);
+        // Extract month and day, use edition year
+        const [_, month, day] = dateString.split('-');
+        const fullDate = `${editionYear}-${month}-${day}`;
+        const date = new Date(fullDate);
         return date.toISOString();
       };
 
       const payload: any = {
         year,
-        startDate: toISODateTime(formData.startDate),
-        endDate: formData.endDate ? toISODateTime(formData.endDate) : undefined,
+        startDate: toISODateTime(formData.startDate, year),
+        endDate: formData.endDate ? toISODateTime(formData.endDate, year) : undefined,
         distance: formData.distance ? parseFloat(formData.distance) : undefined,
         elevation: formData.elevation ? parseInt(formData.elevation) : undefined,
         maxParticipants: formData.maxParticipants
@@ -97,10 +119,10 @@ export default function EditionForm({
         city: formData.city || undefined,
         registrationUrl: formData.registrationUrl || undefined,
         registrationOpenDate: formData.registrationOpenDate
-          ? toISODateTime(formData.registrationOpenDate)
+          ? toISODateTime(formData.registrationOpenDate, year)
           : undefined,
         registrationCloseDate: formData.registrationCloseDate
-          ? toISODateTime(formData.registrationCloseDate)
+          ? toISODateTime(formData.registrationCloseDate, year)
           : undefined,
         resultsUrl: formData.resultsUrl || undefined,
         status: formData.status,
@@ -240,10 +262,13 @@ export default function EditionForm({
               type="date"
               id="startDate"
               value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              onChange={(e) => handleDateChange('startDate', e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              El año se toma automáticamente del campo "Año" ({formData.year})
+            </p>
           </div>
 
           {/* End Date */}
@@ -255,9 +280,12 @@ export default function EditionForm({
               type="date"
               id="endDate"
               value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              onChange={(e) => handleDateChange('endDate', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              El año se toma automáticamente del campo "Año" ({formData.year})
+            </p>
           </div>
         </div>
 
@@ -461,11 +489,12 @@ export default function EditionForm({
               type="date"
               id="registrationOpenDate"
               value={formData.registrationOpenDate}
-              onChange={(e) =>
-                setFormData({ ...formData, registrationOpenDate: e.target.value })
-              }
+              onChange={(e) => handleDateChange('registrationOpenDate', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Año de la edición: {formData.year}
+            </p>
           </div>
 
           <div>
@@ -479,11 +508,12 @@ export default function EditionForm({
               type="date"
               id="registrationCloseDate"
               value={formData.registrationCloseDate}
-              onChange={(e) =>
-                setFormData({ ...formData, registrationCloseDate: e.target.value })
-              }
+              onChange={(e) => handleDateChange('registrationCloseDate', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Año de la edición: {formData.year}
+            </p>
           </div>
         </div>
 
