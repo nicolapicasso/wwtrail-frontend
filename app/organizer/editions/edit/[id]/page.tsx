@@ -7,8 +7,10 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import EditionForm from '@/components/forms/EditionForm';
+import WeatherCard from '@/components/WeatherCard';
 import editionsService from '@/lib/api/v2/editions.service';
 import competitionsService from '@/lib/api/v2/competitions.service';
+import { useWeather } from '@/hooks/useWeather';
 import type { Edition } from '@/types/edition';
 import type { Competition } from '@/types/competition';
 
@@ -24,6 +26,15 @@ export default function EditEditionPage({ params }: EditEditionPageProps) {
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Weather hook
+  const {
+    weather,
+    weatherFetched,
+    loading: weatherLoading,
+    fetching: weatherFetching,
+    fetchWeather,
+  } = useWeather(params.id);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -131,6 +142,26 @@ export default function EditEditionPage({ params }: EditEditionPageProps) {
             router.push(`/organizer/events/${competition.eventId}`);
           }}
         />
+
+        {/* Weather Section */}
+        <div className="mt-8 bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            Datos Meteorológicos
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Obtén los datos climáticos históricos de esta edición desde Open-Meteo API.
+            Los datos se guardarán en la base de datos y se mostrarán en la página pública de la edición.
+          </p>
+
+          <WeatherCard
+            weather={weather}
+            weatherFetched={weatherFetched}
+            loading={weatherLoading}
+            fetching={weatherFetching}
+            canFetch={true}
+            onFetch={fetchWeather}
+          />
+        </div>
       </div>
     </div>
   );

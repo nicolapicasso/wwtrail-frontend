@@ -44,15 +44,15 @@ export default function WeatherCard({
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Datos meteorológicos no disponibles
           </h3>
-          <p className="text-gray-600 mb-6">
-            Esta edición aún no tiene datos climáticos históricos.
+          <p className="text-gray-600">
+            Esta edición aún no tiene datos climáticos históricos registrados.
           </p>
 
           {canFetch && onFetch && (
             <button
               onClick={() => onFetch(false)}
               disabled={fetching}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl mt-6"
             >
               {fetching ? (
                 <>
@@ -66,12 +66,6 @@ export default function WeatherCard({
                 </>
               )}
             </button>
-          )}
-
-          {!canFetch && (
-            <p className="text-sm text-gray-500 italic">
-              Solo los administradores pueden obtener datos meteorológicos
-            </p>
           )}
         </div>
       </div>

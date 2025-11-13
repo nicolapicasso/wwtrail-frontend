@@ -301,9 +301,9 @@ export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
               weather={weather}
               weatherFetched={weatherFetched}
               loading={weatherLoading}
-              fetching={weatherFetching}
-              canFetch={user?.role === 'ADMIN' || user?.role === 'ORGANIZER'}
-              onFetch={fetchWeather}
+              fetching={false}
+              canFetch={false}
+              onFetch={undefined}
             />
           </div>
         )}
