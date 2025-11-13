@@ -10,7 +10,7 @@ import { useEditions } from '@/hooks/useEditions';
 import { EditionSelector } from '@/components/EditionSelector';
 import { EditionCard } from '@/components/EditionCard';
 import { Edition } from '@/types/v2';
-import { Mountain, TrendingUp, Users, ArrowLeft, Calendar, MapPin } from 'lucide-react';
+import { Mountain, TrendingUp, Users, ArrowLeft, Calendar, MapPin, Info } from 'lucide-react';
 import Link from 'next/link';
 import EventMap from '@/components/EventMap';
 import EventGallery from '@/components/EventGallery';
@@ -89,9 +89,6 @@ export default function CompetitionDetailPage() {
                 <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
                   {competition.name}
                 </h1>
-                {competition.description && (
-                  <p className="text-lg text-white/90 mt-2">{competition.description}</p>
-                )}
                 {competition.event && (
                   <div className="flex items-center gap-2 mt-4 text-white/90">
                     <MapPin className="h-5 w-5" />
@@ -114,6 +111,19 @@ export default function CompetitionDetailPage() {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
+            {/* Description */}
+            {competition.description && (
+              <div className="rounded-lg border bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-xl font-bold flex items-center gap-2">
+                  <Info className="h-6 w-6 text-blue-600" />
+                  Acerca de
+                </h2>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {competition.description}
+                </p>
+              </div>
+            )}
+
             {/* Edition Selector */}
             <div className="rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-bold">Select Edition</h2>
