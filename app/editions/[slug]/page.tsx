@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { ArrowLeft, Calendar, MapPin, Mountain, TrendingUp, Users, Clock } from 'lucide-react';
 import editionsService from '@/lib/api/v2/editions.service';
 import EditionDetailTabs from '@/components/EditionDetailTabs';
+import EventGallery from '@/components/EventGallery';
+import EventMap from '@/components/EventMap';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -60,9 +62,18 @@ export default async function EditionDetailPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white">
-        <div className="container mx-auto px-4 py-12">
+      {/* Hero Section with Cover Image */}
+      <div className="relative h-96 bg-gradient-to-r from-blue-600 to-green-600">
+        {edition.coverImage && (
+          <img
+            src={edition.coverImage}
+            alt={`${competition.name} ${edition.year}`}
+            className="w-full h-full object-cover"
+          />
+        )}
+        <div className="absolute inset-0 bg-black/40"></div>
+
+        <div className="absolute inset-0 container mx-auto px-4 py-12 flex flex-col justify-end text-white">
           {/* Breadcrumbs */}
           <div className="mb-6">
             <nav className="flex items-center gap-2 text-sm text-white/80">
@@ -149,6 +160,16 @@ export default async function EditionDetailPage({
               )}
             </div>
 
+            {/* Gallery */}
+            {edition.gallery && edition.gallery.length > 0 && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <EventGallery
+                  images={edition.gallery}
+                  eventName={`${competition.name} ${edition.year}`}
+                />
+              </div>
+            )}
+
             {/* Tabs */}
             <div className="bg-white rounded-lg shadow p-6">
               <EditionDetailTabs edition={edition} />
@@ -157,6 +178,47 @@ export default async function EditionDetailPage({
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Logo with Inheritance */}
+            {(competition.logoUrl || event.logoUrl) && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex justify-center">
+                  <img
+                    src={competition.logoUrl || event.logoUrl}
+                    alt={`${competition.name} logo`}
+                    className="max-h-32 w-auto object-contain"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Map */}
+            {event.latitude && event.longitude && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-green-600" />
+                  Ubicación
+                </h3>
+                <EventMap
+                  event={{
+                    ...event,
+                    name: `${competition.name} ${edition.year}`,
+                  }}
+                  nearbyEvents={[]}
+                />
+                <div className="mt-4">
+                  <a
+                    href={`https://www.google.com/maps?q=${event.latitude},${event.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-2"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    Ver en Google Maps
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* Registration Info */}
             {edition.registrationUrl && (
               <div className="bg-white rounded-lg shadow p-6">

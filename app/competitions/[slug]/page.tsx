@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { competitionsService } from '@/lib/api';
-import { Calendar, MapPin, TrendingUp, Users, ArrowLeft, Share2 } from 'lucide-react';
+import competitionsService from '@/lib/api/v2/competitions.service';
+import { Calendar, MapPin, TrendingUp, Users, ArrowLeft, Share2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CompetitionActions } from '@/components/CompetitionActions';
+import EventGallery from '@/components/EventGallery';
+import EventMap from '@/components/EventMap';
 
 export default function CompetitionDetailPage() {
   const params = useParams();
@@ -27,16 +29,7 @@ export default function CompetitionDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      // Note: We need to add getBySlug to the service
-      // For now, we'll fetch all and find by slug
-      const response = await competitionsService.getAll({ limit: 100 });
-      const comp = response.data?.find((c: any) => c.slug === slug);
-      
-      if (!comp) {
-        setError('Competición no encontrada');
-        return;
-      }
-      
+      const comp = await competitionsService.getBySlug(slug);
       setCompetition(comp);
     } catch (err: any) {
       console.error('Error loading competition:', err);
@@ -99,9 +92,9 @@ export default function CompetitionDetailPage() {
     <div className="min-h-screen bg-background">
       {/* Header Image */}
       <div className="relative h-96 bg-gray-200">
-        {competition.imageUrl ? (
+        {competition.coverImage ? (
           <img
-            src={competition.imageUrl}
+            src={competition.coverImage}
             alt={competition.name}
             className="w-full h-full object-cover"
           />
@@ -186,21 +179,21 @@ export default function CompetitionDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {competition.distance && (
+                  {competition.baseDistance && (
                     <div className="text-center p-4 bg-muted rounded-lg">
-                      <p className="text-2xl font-bold text-primary">{competition.distance} km</p>
+                      <p className="text-2xl font-bold text-primary">{competition.baseDistance} km</p>
                       <p className="text-sm text-muted-foreground">Distancia</p>
                     </div>
                   )}
-                  {competition.elevation && (
+                  {competition.baseElevation && (
                     <div className="text-center p-4 bg-muted rounded-lg">
-                      <p className="text-2xl font-bold text-primary">{competition.elevation} m</p>
+                      <p className="text-2xl font-bold text-primary">{competition.baseElevation} m</p>
                       <p className="text-sm text-muted-foreground">Desnivel +</p>
                     </div>
                   )}
-                  {competition.maxParticipants && (
+                  {competition.baseMaxParticipants && (
                     <div className="text-center p-4 bg-muted rounded-lg">
-                      <p className="text-2xl font-bold text-primary">{competition.maxParticipants}</p>
+                      <p className="text-2xl font-bold text-primary">{competition.baseMaxParticipants}</p>
                       <p className="text-sm text-muted-foreground">Plazas</p>
                     </div>
                   )}
@@ -213,10 +206,69 @@ export default function CompetitionDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Gallery */}
+            {competition.gallery && competition.gallery.length > 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <EventGallery
+                    images={competition.gallery}
+                    eventName={competition.name}
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Logo with Inheritance */}
+            {(competition.logoUrl || competition.event?.logoUrl) && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex justify-center">
+                    <img
+                      src={competition.logoUrl || competition.event?.logoUrl}
+                      alt={`${competition.name} logo`}
+                      className="max-h-32 w-auto object-contain"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Map */}
+            {competition.event?.latitude && competition.event?.longitude && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Ubicación
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EventMap
+                    event={{
+                      ...competition.event,
+                      name: competition.name,
+                    }}
+                    nearbyEvents={[]}
+                  />
+                  <div className="mt-4">
+                    <a
+                      href={`https://www.google.com/maps?q=${competition.event.latitude},${competition.event.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-2"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      Ver en Google Maps
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Registration Card */}
             <Card>
               <CardHeader>
