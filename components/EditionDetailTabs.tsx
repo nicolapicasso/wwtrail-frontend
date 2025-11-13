@@ -21,7 +21,7 @@ interface EditionDetailTabsProps {
   edition: Edition;
 }
 
-type TabKey = 'info' | 'podiums' | 'gallery' | 'ratings' | 'weather';
+type TabKey = 'info' | 'regulations' | 'podiums' | 'gallery' | 'ratings' | 'weather';
 
 export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('info');
@@ -65,6 +65,12 @@ export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
 
   const tabs = [
     { key: 'info' as TabKey, label: 'Información', icon: Info },
+    {
+      key: 'regulations' as TabKey,
+      label: 'Reglamento',
+      icon: Info,
+      show: !!edition.regulations,
+    },
     {
       key: 'podiums' as TabKey,
       label: 'Clasificaciones',
@@ -148,6 +154,20 @@ export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
             ) : (
               <p className="text-gray-600">
                 Esta edición aún no tiene información detallada.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Reglamento */}
+        {activeTab === 'regulations' && (
+          <div className="prose max-w-none">
+            <h2>Reglamento</h2>
+            {edition.regulations ? (
+              <div className="whitespace-pre-wrap">{edition.regulations}</div>
+            ) : (
+              <p className="text-gray-600">
+                Esta edición aún no tiene reglamento publicado.
               </p>
             )}
           </div>

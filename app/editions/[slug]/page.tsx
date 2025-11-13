@@ -174,6 +174,27 @@ export default async function EditionDetailPage({
                       value={formatDate(edition.registrationCloseDate) || '-'}
                     />
                   )}
+
+                  {/* Prices */}
+                  {edition.prices && (edition.prices.early || edition.prices.normal || edition.prices.late) && (
+                    <>
+                      <div className="border-t pt-3 mt-3">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Precios:</p>
+                        <div className="space-y-1">
+                          {edition.prices.early && (
+                            <InfoRow label="Early Bird" value={`${edition.prices.early}€`} />
+                          )}
+                          {edition.prices.normal && (
+                            <InfoRow label="Normal" value={`${edition.prices.normal}€`} />
+                          )}
+                          {edition.prices.late && (
+                            <InfoRow label="Tardío" value={`${edition.prices.late}€`} />
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
                   <div className="pt-3">
                     <RegistrationStatusBadge status={edition.registrationStatus} />
                   </div>
