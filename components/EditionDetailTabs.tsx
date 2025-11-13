@@ -51,7 +51,13 @@ export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
     deletePhoto,
   } = usePhotos(edition.id);
 
-  const { weather, refetching, refetch: refetchWeather } = useWeather(edition.id);
+  const {
+    weather,
+    weatherFetched,
+    loading: weatherLoading,
+    fetching: weatherFetching,
+    fetchWeather
+  } = useWeather(edition.id);
 
   // User's rating
   const myRating = ratings.find((r) => r.userId === user?.id);
@@ -81,7 +87,7 @@ export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
       key: 'weather' as TabKey,
       label: 'Meteo',
       icon: Cloud,
-      show: !!edition.weather || !!edition.specificDate,
+      show: true, // Always show weather tab
     },
   ];
 
@@ -293,9 +299,11 @@ export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
 
             <WeatherCard
               weather={weather}
-              editionId={edition.id}
-              canRefetch={false} // TODO: Check admin permissions
-              onRefetch={refetchWeather}
+              weatherFetched={weatherFetched}
+              loading={weatherLoading}
+              fetching={weatherFetching}
+              canFetch={user?.role === 'ADMIN' || user?.role === 'ORGANIZER'}
+              onFetch={fetchWeather}
             />
           </div>
         )}

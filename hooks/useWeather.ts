@@ -9,19 +9,21 @@ import { toast } from 'sonner';
 
 export function useWeather(editionId: string) {
   const [weather, setWeather] = useState<EditionWeather | null>(null);
+  const [weatherFetched, setWeatherFetched] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [refetching, setRefetching] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchWeather = useCallback(async () => {
+  const loadWeather = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
       const data = await weatherService.getByEdition(editionId);
-      setWeather(data);
+      setWeather(data.weather);
+      setWeatherFetched(data.weatherFetched);
     } catch (err: any) {
-      console.error('Error fetching weather:', err);
+      console.error('Error loading weather:', err);
       setError(err.message || 'Error al cargar datos meteorológicos');
     } finally {
       setLoading(false);
@@ -29,34 +31,35 @@ export function useWeather(editionId: string) {
   }, [editionId]);
 
   useEffect(() => {
-    fetchWeather();
-  }, [fetchWeather]);
+    loadWeather();
+  }, [loadWeather]);
 
-  const refetch = useCallback(async () => {
-    setRefetching(true);
+  const fetchWeather = useCallback(async (force: boolean = false) => {
+    setFetching(true);
 
     try {
-      const data = await weatherService.refetch(editionId);
+      const data = await weatherService.fetch(editionId, force);
       setWeather(data);
-      toast.success('Datos meteorológicos actualizados correctamente');
+      setWeatherFetched(true);
+      toast.success('Datos meteorológicos obtenidos correctamente');
       return data;
     } catch (err: any) {
-      console.error('Error refetching weather:', err);
-      toast.error(
-        err.response?.data?.message ||
-          'Error al actualizar datos meteorológicos'
-      );
+      console.error('Error fetching weather:', err);
+      const errorMessage = err.response?.data?.message || 'Error al obtener datos meteorológicos';
+      toast.error(errorMessage);
       throw err;
     } finally {
-      setRefetching(false);
+      setFetching(false);
     }
   }, [editionId]);
 
   return {
     weather,
+    weatherFetched,
     loading,
-    refetching,
+    fetching,
     error,
-    refetch,
+    fetchWeather,
+    reload: loadWeather,
   };
 }

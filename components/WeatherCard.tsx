@@ -2,38 +2,98 @@
 
 'use client';
 
-import { RefreshCw } from 'lucide-react';
-import { WEATHER_ICONS, WEATHER_COLORS, WIND_DIRECTIONS } from '@/types/weather';
+import { RefreshCw, CloudOff, Loader2 } from 'lucide-react';
+import { WEATHER_ICONS, WEATHER_COLORS } from '@/types/weather';
 import type { EditionWeather } from '@/types/weather';
 
 interface WeatherCardProps {
   weather: EditionWeather | null | undefined;
-  editionId?: string;
-  canRefetch?: boolean;
-  onRefetch?: () => Promise<void>;
+  weatherFetched: boolean;
+  loading?: boolean;
+  fetching?: boolean;
+  canFetch?: boolean;
+  onFetch?: (force?: boolean) => Promise<void>;
 }
 
 export default function WeatherCard({
   weather,
-  editionId,
-  canRefetch = false,
-  onRefetch,
+  weatherFetched,
+  loading = false,
+  fetching = false,
+  canFetch = false,
+  onFetch,
 }: WeatherCardProps) {
-  if (!weather) {
+  // Loading state
+  if (loading) {
     return (
-      <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8">
+      <div className="bg-white rounded-lg border border-gray-200 p-8">
+        <div className="flex items-center justify-center gap-3 text-gray-500">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>Cargando datos meteorológicos...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // No weather fetched yet
+  if (!weatherFetched) {
+    return (
+      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border-2 border-dashed border-blue-300 p-8">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">
-            No hay datos meteorológicos disponibles para esta edición
+          <CloudOff className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Datos meteorológicos no disponibles
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Esta edición aún no tiene datos climáticos históricos.
           </p>
 
-          {canRefetch && onRefetch && editionId && (
+          {canFetch && onFetch && (
             <button
-              onClick={onRefetch}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+              onClick={() => onFetch(false)}
+              disabled={fetching}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+            >
+              {fetching ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Obteniendo datos...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-5 h-5" />
+                  Obtener datos meteorológicos
+                </>
+              )}
+            </button>
+          )}
+
+          {!canFetch && (
+            <p className="text-sm text-gray-500 italic">
+              Solo los administradores pueden obtener datos meteorológicos
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Weather fetched but data is null (shouldn't happen, but handle it)
+  if (!weather) {
+    return (
+      <div className="bg-yellow-50 rounded-lg border border-yellow-200 p-8">
+        <div className="text-center">
+          <p className="text-yellow-800 mb-4">
+            Los datos meteorológicos no pudieron cargarse correctamente
+          </p>
+          {canFetch && onFetch && (
+            <button
+              onClick={() => onFetch(true)}
+              disabled={fetching}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2 mx-auto"
             >
               <RefreshCw className="w-4 h-4" />
-              Obtener datos meteorológicos
+              Reintentar
             </button>
           )}
         </div>
@@ -50,13 +110,15 @@ export default function WeatherCard({
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-gray-900">Condiciones Meteorológicas</h3>
 
-        {canRefetch && onRefetch && (
+        {canFetch && onFetch && (
           <button
-            onClick={onRefetch}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Refetch weather"
+            onClick={() => onFetch(true)}
+            disabled={fetching}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Actualizar datos meteorológicos"
+            title="Actualizar datos meteorológicos"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${fetching ? 'animate-spin' : ''}`} />
           </button>
         )}
       </div>
