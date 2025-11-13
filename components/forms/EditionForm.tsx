@@ -4,12 +4,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Save, Loader2, AlertCircle, Info } from 'lucide-react';
+import { Save, Loader2, AlertCircle, Info, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import editionsService from '@/lib/api/v2/editions.service';
 import type { Edition } from '@/types/edition';
 import type { Competition } from '@/types/competition';
 import { EditionStatus, RegistrationStatus } from '@/types/competition';
+import FileUpload from '@/components/FileUpload';
 
 interface EditionFormProps {
   competitionId: string;
@@ -58,8 +59,6 @@ export default function EditionForm({
     regulations: edition?.regulations || '',
     featured: edition?.featured || false,
   });
-
-  const [galleryInput, setGalleryInput] = useState('');
 
   // Helper to adjust date to use the edition's year
   const adjustDateToYear = (dateString: string, targetYear: number): string => {
@@ -639,81 +638,66 @@ export default function EditionForm({
 
       {/* Media Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Imágenes y Medios
-        </h3>
-
-        {/* Cover Image */}
-        <div>
-          <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700 mb-1">
-            Imagen de Portada
-          </label>
-          <input
-            type="url"
-            id="coverImage"
-            value={formData.coverImage}
-            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-            placeholder="https://example.com/edition-2025.jpg"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Imagen principal de esta edición
-          </p>
+        <div className="flex items-center gap-2 mb-4">
+          <ImageIcon className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-gray-900">
+            Imágenes y Medios
+          </h3>
         </div>
 
-        {/* Gallery */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Galería de Fotos
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={galleryInput}
-              onChange={(e) => setGalleryInput(e.target.value)}
-              placeholder="https://example.com/photo1.jpg"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Cover Image */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Imagen de Portada
+            </label>
+            <FileUpload
+              fieldname="cover"
+              onUpload={(url) => setFormData({ ...formData, coverImage: url })}
+              currentUrl={formData.coverImage}
+              buttonText="Subir portada"
+              maxSizeMB={5}
+              accept="image/*"
+              showPreview={true}
             />
-            <button
-              type="button"
-              onClick={() => {
-                if (galleryInput.trim()) {
-                  setFormData({
-                    ...formData,
-                    gallery: [...formData.gallery, galleryInput.trim()],
-                  });
-                  setGalleryInput('');
-                }
-              }}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Añadir
-            </button>
+            {formData.coverImage && (
+              <p className="text-xs text-green-600 font-medium mt-2">
+                ✓ Portada subida
+              </p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Imagen principal de esta edición
+            </p>
           </div>
-          {formData.gallery.length > 0 && (
-            <div className="mt-2 space-y-2">
-              {formData.gallery.map((url, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                  <span className="flex-1 text-sm text-gray-700 truncate">{url}</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        gallery: formData.gallery.filter((_, i) => i !== index),
-                      })
-                    }
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <p className="text-xs text-gray-500 mt-1">
-            Fotos de la edición ({formData.gallery.length} fotos)
-          </p>
+
+          {/* Gallery */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Galería de Fotos
+            </label>
+            <FileUpload
+              fieldname="gallery"
+              multiple={true}
+              onUploadMultiple={(urls) => setFormData({ ...formData, gallery: urls })}
+              currentUrls={formData.gallery}
+              buttonText="Subir fotos"
+              maxSizeMB={3}
+              accept="image/*"
+              showPreview={true}
+            />
+            {formData.gallery.length > 0 && (
+              <p className="text-xs text-green-600 font-medium mt-2">
+                ✓ {formData.gallery.length} fotos
+              </p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Fotos de la edición ({formData.gallery.length} fotos)
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+          💡 Las imágenes se optimizan automáticamente. Máximo 5MB por archivo.
         </div>
       </div>
 

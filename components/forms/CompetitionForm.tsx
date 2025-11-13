@@ -4,11 +4,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Save, Loader2, AlertCircle } from 'lucide-react';
+import { Save, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import competitionsService from '@/lib/api/v2/competitions.service';
 import type { Competition } from '@/types/competition';
 import { CompetitionType } from '@/types/event';
+import FileUpload from '@/components/FileUpload';
 
 interface CompetitionFormProps {
   eventId: string;
@@ -47,8 +48,6 @@ export default function CompetitionForm({
     status: competition?.status || 'DRAFT',
     featured: competition?.featured || false,
   });
-
-  const [galleryInput, setGalleryInput] = useState('');
 
   // Auto-generate slug from name
   const generateSlug = (name: string) => {
@@ -325,99 +324,84 @@ export default function CompetitionForm({
 
       {/* Media Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Imágenes y Medios
-        </h3>
-
-        {/* Logo URL */}
-        <div>
-          <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700 mb-1">
-            URL del Logo
-          </label>
-          <input
-            type="url"
-            id="logoUrl"
-            value={formData.logoUrl}
-            onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-            placeholder="https://example.com/logo.png"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Logo específico de la competición (opcional)
-          </p>
+        <div className="flex items-center gap-2 mb-4">
+          <ImageIcon className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-gray-900">
+            Imágenes y Medios
+          </h3>
         </div>
 
-        {/* Cover Image */}
-        <div>
-          <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700 mb-1">
-            Imagen de Portada
-          </label>
-          <input
-            type="url"
-            id="coverImage"
-            value={formData.coverImage}
-            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-            placeholder="https://example.com/cover.jpg"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Imagen principal para la portada de la competición
-          </p>
-        </div>
-
-        {/* Gallery */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Galería de Imágenes
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={galleryInput}
-              onChange={(e) => setGalleryInput(e.target.value)}
-              placeholder="https://example.com/image.jpg"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Logo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Logotipo
+            </label>
+            <FileUpload
+              fieldname="logo"
+              onUpload={(url) => setFormData({ ...formData, logoUrl: url })}
+              currentUrl={formData.logoUrl}
+              buttonText="Subir logo"
+              maxSizeMB={2}
+              accept="image/*"
+              showPreview={true}
             />
-            <button
-              type="button"
-              onClick={() => {
-                if (galleryInput.trim()) {
-                  setFormData({
-                    ...formData,
-                    gallery: [...formData.gallery, galleryInput.trim()],
-                  });
-                  setGalleryInput('');
-                }
-              }}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Añadir
-            </button>
+            {formData.logoUrl && (
+              <p className="text-xs text-green-600 font-medium mt-2">
+                ✓ Logo subido
+              </p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Logo específico de la competición (opcional)
+            </p>
           </div>
-          {formData.gallery.length > 0 && (
-            <div className="mt-2 space-y-2">
-              {formData.gallery.map((url, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                  <span className="flex-1 text-sm text-gray-700 truncate">{url}</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        gallery: formData.gallery.filter((_, i) => i !== index),
-                      })
-                    }
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <p className="text-xs text-gray-500 mt-1">
-            URLs de imágenes para la galería ({formData.gallery.length} imágenes)
-          </p>
+
+          {/* Cover Image */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Imagen de Portada
+            </label>
+            <FileUpload
+              fieldname="cover"
+              onUpload={(url) => setFormData({ ...formData, coverImage: url })}
+              currentUrl={formData.coverImage}
+              buttonText="Subir portada"
+              maxSizeMB={5}
+              accept="image/*"
+              showPreview={true}
+            />
+            {formData.coverImage && (
+              <p className="text-xs text-green-600 font-medium mt-2">
+                ✓ Portada subida
+              </p>
+            )}
+          </div>
+
+          {/* Gallery */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Galería de Fotos
+            </label>
+            <FileUpload
+              fieldname="gallery"
+              multiple={true}
+              onUploadMultiple={(urls) => setFormData({ ...formData, gallery: urls })}
+              currentUrls={formData.gallery}
+              buttonText="Subir fotos"
+              maxSizeMB={3}
+              accept="image/*"
+              showPreview={true}
+            />
+            {formData.gallery.length > 0 && (
+              <p className="text-xs text-green-600 font-medium mt-2">
+                ✓ {formData.gallery.length} fotos
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+          💡 Las imágenes se optimizan automáticamente. Máximo 5MB por archivo.
         </div>
       </div>
 
