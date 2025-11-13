@@ -12,6 +12,8 @@ import { EditionCard } from '@/components/EditionCard';
 import { Edition } from '@/types/v2';
 import { Mountain, TrendingUp, Users, ArrowLeft, Calendar, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import EventMap from '@/components/EventMap';
+import EventGallery from '@/components/EventGallery';
 
 export default function CompetitionDetailPage() {
   const params = useParams();
@@ -57,29 +59,52 @@ export default function CompetitionDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-6">
+      {/* Hero Section with Cover Image */}
+      <div className="relative h-96 bg-gradient-to-r from-blue-600 to-green-600">
+        {competition.coverImage && (
+          <img
+            src={competition.coverImage}
+            alt={competition.name}
+            className="w-full h-full object-cover"
+          />
+        )}
+        <div className="absolute inset-0 bg-black/40"></div>
+
+        {/* Back Button */}
+        <div className="absolute top-4 left-4 z-10">
           <Link
             href={`/events/${eventSlug}`}
-            className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            className="text-white hover:text-gray-200 flex items-center gap-2 bg-black/30 px-4 py-2 rounded-lg backdrop-blur-sm"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to {competition.event?.name}
+            Volver a {competition.event?.name}
           </Link>
+        </div>
 
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">{competition.name}</h1>
-              {competition.description && (
-                <p className="mt-2 text-muted-foreground">{competition.description}</p>
+        {/* Title Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
+          <div className="container mx-auto">
+            <div className="flex items-end justify-between">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+                  {competition.name}
+                </h1>
+                {competition.description && (
+                  <p className="text-lg text-white/90 mt-2">{competition.description}</p>
+                )}
+                {competition.event && (
+                  <div className="flex items-center gap-2 mt-4 text-white/90">
+                    <MapPin className="h-5 w-5" />
+                    <span>{competition.event.city}, {competition.event.country}</span>
+                  </div>
+                )}
+              </div>
+              {!competition.isActive && (
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
+                  Inactiva
+                </span>
               )}
             </div>
-            {!competition.isActive && (
-              <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
-                Inactive
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -104,6 +129,16 @@ export default function CompetitionDetailPage() {
               <div className="rounded-lg border bg-white p-6 shadow-sm">
                 <h2 className="mb-4 text-xl font-bold">Edition Details</h2>
                 <EditionCard edition={selectedEdition} showInheritance />
+              </div>
+            )}
+
+            {/* Gallery */}
+            {competition.gallery && competition.gallery.length > 0 && (
+              <div className="rounded-lg border bg-white p-6 shadow-sm">
+                <EventGallery
+                  images={competition.gallery}
+                  eventName={competition.name}
+                />
               </div>
             )}
 
@@ -201,6 +236,47 @@ export default function CompetitionDetailPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Logo with Inheritance */}
+            {(competition.logoUrl || competition.event?.logoUrl) && (
+              <div className="rounded-lg border bg-white p-6 shadow-sm">
+                <div className="flex justify-center">
+                  <img
+                    src={competition.logoUrl || competition.event?.logoUrl}
+                    alt={`${competition.name} logo`}
+                    className="max-h-32 w-auto object-contain"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Map */}
+            {competition.event?.latitude && competition.event?.longitude && (
+              <div className="rounded-lg border bg-white p-6 shadow-sm">
+                <h3 className="mb-4 font-semibold flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-green-600" />
+                  Ubicación
+                </h3>
+                <EventMap
+                  event={{
+                    ...competition.event,
+                    name: competition.name,
+                  }}
+                  nearbyEvents={[]}
+                />
+                <div className="mt-4">
+                  <a
+                    href={`https://www.google.com/maps?q=${competition.event.latitude},${competition.event.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-2"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    Ver en Google Maps
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* Base Information */}
             <div className="rounded-lg border bg-white p-6 shadow-sm">
               <h3 className="mb-4 font-semibold">Base Information</h3>

@@ -160,6 +160,11 @@ export default async function EditionDetailPage({
               )}
             </div>
 
+            {/* Tabs */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <EditionDetailTabs edition={edition} />
+            </div>
+
             {/* Gallery */}
             {edition.gallery && edition.gallery.length > 0 && (
               <div className="bg-white rounded-lg shadow p-6">
@@ -169,11 +174,6 @@ export default async function EditionDetailPage({
                 />
               </div>
             )}
-
-            {/* Tabs */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <EditionDetailTabs edition={edition} />
-            </div>
           </div>
 
           {/* Sidebar */}

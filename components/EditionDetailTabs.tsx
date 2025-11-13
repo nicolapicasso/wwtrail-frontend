@@ -3,16 +3,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Info, Trophy, Image, Star, Cloud } from 'lucide-react';
+import { Info, Trophy, Star, Cloud } from 'lucide-react';
 import RatingSummary from './RatingSummary';
 import RatingForm from './RatingForm';
 import RatingCard from './RatingCard';
 import PodiumCard from './PodiumCard';
-import EditionGallery from './EditionGallery';
 import WeatherCard from './WeatherCard';
 import { useRatings } from '@/hooks/useRatings';
 import { usePodiums } from '@/hooks/usePodiums';
-import { usePhotos } from '@/hooks/usePhotos';
 import { useWeather } from '@/hooks/useWeather';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Edition } from '@/types/edition';
@@ -21,7 +19,7 @@ interface EditionDetailTabsProps {
   edition: Edition;
 }
 
-type TabKey = 'info' | 'regulations' | 'podiums' | 'gallery' | 'ratings' | 'weather';
+type TabKey = 'info' | 'regulations' | 'podiums' | 'ratings' | 'weather';
 
 export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('info');
@@ -43,13 +41,6 @@ export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
     updatePodium,
     deletePodium,
   } = usePodiums(edition.id);
-
-  const {
-    photos,
-    uploading: photosUploading,
-    uploadPhotos,
-    deletePhoto,
-  } = usePhotos(edition.id);
 
   const {
     weather,
@@ -76,12 +67,6 @@ export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
       label: 'Clasificaciones',
       icon: Trophy,
       count: edition.podiums?.length,
-    },
-    {
-      key: 'gallery' as TabKey,
-      label: 'Galería',
-      icon: Image,
-      count: edition.photos?.length,
     },
     {
       key: 'ratings' as TabKey,
@@ -233,19 +218,6 @@ export default function EditionDetailTabs({ edition }: EditionDetailTabsProps) {
                   )}
               </>
             )}
-          </div>
-        )}
-
-        {/* Galería */}
-        {activeTab === 'gallery' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Galería de Fotos</h2>
-
-            <EditionGallery
-              photos={photos}
-              editionId={edition.id}
-              canEdit={false} // TODO: Check permissions
-            />
           </div>
         )}
 
