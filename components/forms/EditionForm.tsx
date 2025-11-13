@@ -49,7 +49,17 @@ export default function EditionForm({
     chronicle: edition?.chronicle || '',
     status: edition?.status || EditionStatus.UPCOMING,
     registrationStatus: edition?.registrationStatus || RegistrationStatus.NOT_OPEN,
+    // New fields
+    priceEarly: edition?.prices?.early?.toString() || '',
+    priceNormal: edition?.prices?.normal?.toString() || '',
+    priceLate: edition?.prices?.late?.toString() || '',
+    coverImage: edition?.coverImage || '',
+    gallery: edition?.gallery || [],
+    regulations: edition?.regulations || '',
+    featured: edition?.featured || false,
   });
+
+  const [galleryInput, setGalleryInput] = useState('');
 
   // Helper to adjust date to use the edition's year
   const adjustDateToYear = (dateString: string, targetYear: number): string => {
@@ -104,6 +114,12 @@ export default function EditionForm({
         return date.toISOString();
       };
 
+      // Build prices object
+      const prices: any = {};
+      if (formData.priceEarly) prices.early = parseFloat(formData.priceEarly);
+      if (formData.priceNormal) prices.normal = parseFloat(formData.priceNormal);
+      if (formData.priceLate) prices.late = parseFloat(formData.priceLate);
+
       const payload: any = {
         year,
         startDate: toISODateTime(formData.startDate, year),
@@ -127,6 +143,12 @@ export default function EditionForm({
         resultsUrl: formData.resultsUrl || undefined,
         status: formData.status,
         registrationStatus: formData.registrationStatus,
+        // New fields
+        prices: Object.keys(prices).length > 0 ? prices : undefined,
+        coverImage: formData.coverImage.trim() || undefined,
+        gallery: formData.gallery.length > 0 ? formData.gallery : undefined,
+        regulations: formData.regulations.trim() || undefined,
+        featured: formData.featured,
       };
 
       // Chronicle solo para actualización
@@ -330,6 +352,24 @@ export default function EditionForm({
             Relato detallado de cómo fue esta edición (condiciones, anécdotas, etc.)
           </p>
         </div>
+
+        {/* Regulations */}
+        <div>
+          <label htmlFor="regulations" className="block text-sm font-medium text-gray-700 mb-1">
+            Reglamento
+          </label>
+          <textarea
+            id="regulations"
+            value={formData.regulations}
+            onChange={(e) => setFormData({ ...formData, regulations: e.target.value })}
+            rows={10}
+            placeholder="Reglamento completo de la carrera..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Reglamento y normas oficiales de la carrera
+          </p>
+        </div>
       </div>
 
       {/* Technical Specs Section */}
@@ -471,9 +511,12 @@ export default function EditionForm({
             id="registrationUrl"
             value={formData.registrationUrl}
             onChange={(e) => setFormData({ ...formData, registrationUrl: e.target.value })}
-            placeholder="https://..."
+            placeholder="https://inscripciones.ejemplo.com/2025"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Enlace externo de inscripción
+          </p>
         </div>
 
         {/* Registration Dates */}
@@ -533,9 +576,150 @@ export default function EditionForm({
         </div>
       </div>
 
+      {/* Prices Section */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Precios de Inscripción</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Define los precios para diferentes períodos de inscripción
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Early Bird Price */}
+          <div>
+            <label htmlFor="priceEarly" className="block text-sm font-medium text-gray-700 mb-1">
+              Precio Early Bird (€)
+            </label>
+            <input
+              type="number"
+              id="priceEarly"
+              value={formData.priceEarly}
+              onChange={(e) => setFormData({ ...formData, priceEarly: e.target.value })}
+              placeholder="85.00"
+              min="0"
+              step="0.01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+          </div>
+
+          {/* Normal Price */}
+          <div>
+            <label htmlFor="priceNormal" className="block text-sm font-medium text-gray-700 mb-1">
+              Precio Normal (€)
+            </label>
+            <input
+              type="number"
+              id="priceNormal"
+              value={formData.priceNormal}
+              onChange={(e) => setFormData({ ...formData, priceNormal: e.target.value })}
+              placeholder="110.00"
+              min="0"
+              step="0.01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+          </div>
+
+          {/* Late Price */}
+          <div>
+            <label htmlFor="priceLate" className="block text-sm font-medium text-gray-700 mb-1">
+              Precio Tardío (€)
+            </label>
+            <input
+              type="number"
+              id="priceLate"
+              value={formData.priceLate}
+              onChange={(e) => setFormData({ ...formData, priceLate: e.target.value })}
+              placeholder="135.00"
+              min="0"
+              step="0.01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Media Section */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Imágenes y Medios
+        </h3>
+
+        {/* Cover Image */}
+        <div>
+          <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700 mb-1">
+            Imagen de Portada
+          </label>
+          <input
+            type="url"
+            id="coverImage"
+            value={formData.coverImage}
+            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+            placeholder="https://example.com/edition-2025.jpg"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Imagen principal de esta edición
+          </p>
+        </div>
+
+        {/* Gallery */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Galería de Fotos
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={galleryInput}
+              onChange={(e) => setGalleryInput(e.target.value)}
+              placeholder="https://example.com/photo1.jpg"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (galleryInput.trim()) {
+                  setFormData({
+                    ...formData,
+                    gallery: [...formData.gallery, galleryInput.trim()],
+                  });
+                  setGalleryInput('');
+                }
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Añadir
+            </button>
+          </div>
+          {formData.gallery.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {formData.gallery.map((url, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                  <span className="flex-1 text-sm text-gray-700 truncate">{url}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        gallery: formData.gallery.filter((_, i) => i !== index),
+                      })
+                    }
+                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            Fotos de la edición ({formData.gallery.length} fotos)
+          </p>
+        </div>
+      </div>
+
       {/* Status Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Estado</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Estado y Visibilidad</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Edition Status */}
@@ -584,6 +768,27 @@ export default function EditionForm({
               <option value={RegistrationStatus.FULL}>Completa</option>
             </select>
           </div>
+        </div>
+
+        {/* Featured */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Edición Destacada
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.featured}
+              onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">
+              {formData.featured ? 'Destacada' : 'Normal'}
+            </span>
+          </label>
+          <p className="text-xs text-gray-500 mt-1">
+            Las ediciones destacadas se muestran de forma prominente en la página principal
+          </p>
         </div>
       </div>
 

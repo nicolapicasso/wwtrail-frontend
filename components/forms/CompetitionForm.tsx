@@ -40,7 +40,15 @@ export default function CompetitionForm({
     baseMaxParticipants: competition?.baseMaxParticipants?.toString() || '',
     displayOrder: competition?.displayOrder?.toString() || '0',
     isActive: competition?.isActive ?? true,
+    // New fields
+    logoUrl: competition?.logoUrl || '',
+    coverImage: competition?.coverImage || '',
+    gallery: competition?.gallery || [],
+    status: competition?.status || 'DRAFT',
+    featured: competition?.featured || false,
   });
+
+  const [galleryInput, setGalleryInput] = useState('');
 
   // Auto-generate slug from name
   const generateSlug = (name: string) => {
@@ -97,6 +105,12 @@ export default function CompetitionForm({
           : undefined,
         displayOrder: parseInt(formData.displayOrder) || 0,
         isActive: formData.isActive,
+        // New fields
+        logoUrl: formData.logoUrl.trim() || undefined,
+        coverImage: formData.coverImage.trim() || undefined,
+        gallery: formData.gallery.length > 0 ? formData.gallery : undefined,
+        status: formData.status,
+        featured: formData.featured,
       };
 
       let result: Competition;
@@ -309,6 +323,104 @@ export default function CompetitionForm({
         </div>
       </div>
 
+      {/* Media Section */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Imágenes y Medios
+        </h3>
+
+        {/* Logo URL */}
+        <div>
+          <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700 mb-1">
+            URL del Logo
+          </label>
+          <input
+            type="url"
+            id="logoUrl"
+            value={formData.logoUrl}
+            onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+            placeholder="https://example.com/logo.png"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Logo específico de la competición (opcional)
+          </p>
+        </div>
+
+        {/* Cover Image */}
+        <div>
+          <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700 mb-1">
+            Imagen de Portada
+          </label>
+          <input
+            type="url"
+            id="coverImage"
+            value={formData.coverImage}
+            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+            placeholder="https://example.com/cover.jpg"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Imagen principal para la portada de la competición
+          </p>
+        </div>
+
+        {/* Gallery */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Galería de Imágenes
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={galleryInput}
+              onChange={(e) => setGalleryInput(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (galleryInput.trim()) {
+                  setFormData({
+                    ...formData,
+                    gallery: [...formData.gallery, galleryInput.trim()],
+                  });
+                  setGalleryInput('');
+                }
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Añadir
+            </button>
+          </div>
+          {formData.gallery.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {formData.gallery.map((url, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                  <span className="flex-1 text-sm text-gray-700 truncate">{url}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        gallery: formData.gallery.filter((_, i) => i !== index),
+                      })
+                    }
+                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            URLs de imágenes para la galería ({formData.gallery.length} imágenes)
+          </p>
+        </div>
+      </div>
+
       {/* Display Settings Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -316,6 +428,26 @@ export default function CompetitionForm({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Status */}
+          <div>
+            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+              Estado de Publicación
+            </label>
+            <select
+              id="status"
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            >
+              <option value="DRAFT">Borrador</option>
+              <option value="PUBLISHED">Publicada</option>
+              <option value="CANCELLED">Cancelada</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Solo las competiciones publicadas son visibles
+            </p>
+          </div>
+
           {/* Display Order */}
           <div>
             <label htmlFor="displayOrder" className="block text-sm font-medium text-gray-700 mb-1">
@@ -334,11 +466,34 @@ export default function CompetitionForm({
               Número más bajo aparece primero
             </p>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Featured */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Competición Destacada
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.featured}
+                onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">
+                {formData.featured ? 'Destacada' : 'Normal'}
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1">
+              Las competiciones destacadas se muestran de forma prominente
+            </p>
+          </div>
 
           {/* Is Active */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Estado
+              Activa/Inactiva
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
               <input
