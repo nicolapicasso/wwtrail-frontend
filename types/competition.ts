@@ -18,7 +18,12 @@ export interface Competition {
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
-  
+
+  // Imágenes
+  logoUrl?: string;        // Logo de la competición
+  coverImage?: string;     // Imagen de portada/hero
+  gallery?: string[];      // Galería de fotos
+
   // Relación opcional con Event
   event?: {
     id: string;
@@ -27,8 +32,11 @@ export interface Competition {
     country: string;
     city: string;
     organizerId: string;
+    latitude?: number;     // For map display
+    longitude?: number;    // For map display
+    logoUrl?: string;      // For logo inheritance fallback
   };
-  
+
   // Contador de ediciones
   _count?: {
     editions: number;
@@ -46,6 +54,9 @@ export interface CompetitionWithEvent extends Competition {
     country: string;
     city: string;
     organizerId: string;
+    latitude?: number;
+    longitude?: number;
+    logoUrl?: string;
   };
 }
 
